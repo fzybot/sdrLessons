@@ -30,32 +30,13 @@ static struct iio_stream  *txstream = NULL;
 static struct iio_channels_mask *rxmask = NULL;
 static struct iio_channels_mask *txmask = NULL;
 
-/* cleanup and exit */
-static void shutdown(void)
-{
-	printf("* Destroying streams\n");
-	if (rxstream) {iio_stream_destroy(rxstream); }
-	if (txstream) { iio_stream_destroy(txstream); }
-
-	printf("* Destroying buffers\n");
-	if (rxbuf) { iio_buffer_destroy(rxbuf); }
-	if (txbuf) { iio_buffer_destroy(txbuf); }
-
-	printf("* Destroying channel masks\n");
-	if (rxmask) { iio_channels_mask_destroy(rxmask); }
-	if (txmask) { iio_channels_mask_destroy(txmask); }
-
-	printf("* Destroying context\n");
-	if (ctx) { iio_context_destroy(ctx); }
-	//exit(0);
-}
-
 /* common RX and TX streaming params */
 struct stream_cfg {
 	long long bw_hz; // Analog banwidth in Hz
 	long long fs_hz; // Baseband sample rate in Hz
 	long long lo_hz; // Local oscillator frequency in Hz
-	const char* rfport; // Port name
+    long long buffer_size;
+    const char *rfport; // Port name
 };
 
 int main(){
@@ -66,13 +47,18 @@ int main(){
 	struct stream_cfg txcfg;
 
     // RX stream config
-	rxcfg.bw_hz = MHZ(1);   // 2 MHz rf bandwidth
+	rxcfg.bw_hz = MHZ(2);   // 2 MHz rf bandwidth
 	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
 	rxcfg.lo_hz = GHZ(1); // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
+    rxcfg.buffer_size = pow(2, 16); // размер буфера в сэмплах
 
-	// TX stream config
-	txcfg.bw_hz = MHZ(1); // 1.5 MHz rf bandwidth
+    // TX stream config
+    txcfg.bw_hz = MHZ(1.5); // 1.5 MHz rf bandwidth
+    txcfg.buffer_size = pow(2, 16); // размер буфера в сэмплах
+
+    // TX stream config
+	txcfg.bw_hz = MHZ(2); // 1.5 MHz rf bandwidth
 	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
 	txcfg.lo_hz = GHZ(1); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
@@ -159,78 +145,72 @@ int main(){
 	rxbuf = iio_device_create_buffer(rx_dev, 0, rxmask);
     txbuf = iio_device_create_buffer(tx_dev, 0, txmask);
 
-    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 14));
-    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 14));
+
+
+    rxstream = iio_buffer_create_stream(rxbuf, 4, rxcfg.buffer_size);
+    txstream = iio_buffer_create_stream(txbuf, 4, txcfg.buffer_size);
     // RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
     rx_sample_sz = iio_device_get_sample_size(rx_dev, rxmask);
 	tx_sample_sz = iio_device_get_sample_size(tx_dev, txmask);
-    printf("* rx_sample_sz = %l\n",rx_sample_sz);
-    printf("* tx_sample_sz = %l\n",tx_sample_sz);
+    printf("* rx_sample_sz = %d [bytes]\n",rx_sample_sz);
+    printf("* tx_sample_sz = %d [bytes]\n",tx_sample_sz);
 
-    const struct iio_block *txblock, *rxblock;
-
-    // Открываем файл для записи данных
-    std::ofstream outfile("rx_signal.txt", std::ios::out);
-    int16_t rx_i[1000000];
-    int16_t rx_q[1000000];
-    for (int j = 0; j < 1000000; j++){
-        rx_i[j] = 0;
-        rx_q[j] = 0;
-    }
+    struct iio_block *txblock, *rxblock;
 
     int32_t counter = 0;
-    int32_t i = 0;
-    while (counter != 30)
+    // Открываем файл для записи данных
+    std::ofstream outfile("rx_signal.txt", std::ios::out);
+
+    if (!outfile.is_open()) {
+        std::cerr << "Unable to open file for writing" << std::endl;
+        //return;
+    }
+    while (1)
     {
+        counter++;
         int16_t *p_dat, *p_end;
-		ptrdiff_t p_inc;
+        ptrdiff_t p_inc;
         uint32_t samples_cnt = 0;
 
-        rxblock = iio_stream_get_next_block(rxstream);
-        txblock = iio_stream_get_next_block(txstream);
-
-        if(counter == 2){
-            /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-            p_inc = tx_sample_sz;
-            p_end = static_cast<int16_t *>(iio_block_end(txblock));
-            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-                p_dat += p_inc / sizeof(*p_dat)) {
-                
-                    p_dat[0] = 330; /* Real (I) */
-                    p_dat[1] = 330; /* Imag (Q) */
-                
-                // p_dat[0] = 10000; /* Real (I) */
-                // p_dat[1] = 10000; /* Imag (Q) */
-            }
-        }
-
+        
+        rxblock = iio_buffer_create_block(rxbuf, rxcfg.buffer_size);
         /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
 		p_inc = rx_sample_sz;
 		p_end = static_cast<int16_t *>(iio_block_end(rxblock));
-        printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_q), p_end, p_inc);
-		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
+        //printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_i), p_end, p_inc);
+		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_i)); p_dat < p_end;
 		     p_dat += p_inc / sizeof(*p_dat)) {
 			/* Example: swap I and Q */
-			// int16_t i = p_dat[0];
-			// int16_t q = p_dat[1];
-            rx_i[i] = p_dat[0];
-            rx_q[i] = p_dat[1];
-            samples_cnt++;
-            i++;
+			int16_t i = p_dat[0];
+			int16_t q = p_dat[1];
+            outfile << i << ", " << q << std::endl;
+		}
+        iio_block_enqueue(rxblock, 0, false);
+        iio_buffer_enable(rxbuf);
+        iio_block_dequeue(rxblock, false);
+
+        txblock = iio_buffer_create_block(txbuf, txcfg.buffer_size);
+        /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
+        p_inc = tx_sample_sz;
+        p_end = static_cast<int16_t *>(iio_block_end(txblock));
+        for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+            p_dat += p_inc / sizeof(*p_dat)) {
+            if(counter % 10 == 0){
+                p_dat[0] = 10000; /* Real (I) */
+                p_dat[1] = 10000; /* Imag (Q) */
+            } else {
+                p_dat[0] = 10; /* Real (I) */
+                p_dat[1] = 10; /* Imag (Q) */
+            }
         }
-        printf("samples_cnt = %d\n", samples_cnt);
-        printf("i = %d\n", i);
 
+        iio_block_enqueue(txblock, 0, false);
+        iio_buffer_enable(txbuf);
+        iio_block_dequeue(txblock, false);
 
-        printf("counter = %d\n", counter);
-        counter++;
-    }
-    shutdown();
-    for (int j = 0; j < 1000000; j++){
-        // printf("rx_i[i] = %d\n", rx_i[j]);
-        // printf("rx_q[i] = %d\n", rx_q[j]);
-        outfile << rx_i[j] << ", " << rx_q[j] << std::endl;
+        // printf("samples_cnt = %d\n", samples_cnt);
+        
     }
 
     return 0;

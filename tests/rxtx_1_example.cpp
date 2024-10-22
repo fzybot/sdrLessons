@@ -68,7 +68,7 @@ int main(){
     // RX stream config
 	rxcfg.bw_hz = MHZ(1);   // 2 MHz rf bandwidth
 	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(1); // 2.5 GHz rf frequency
+	rxcfg.lo_hz = GHZ(1.015); // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
@@ -159,8 +159,8 @@ int main(){
 	rxbuf = iio_device_create_buffer(rx_dev, 0, rxmask);
     txbuf = iio_device_create_buffer(tx_dev, 0, txmask);
 
-    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 14));
-    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 14));
+    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 13));
+    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 13));
     // RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
     rx_sample_sz = iio_device_get_sample_size(rx_dev, rxmask);
@@ -171,7 +171,7 @@ int main(){
     const struct iio_block *txblock, *rxblock;
 
     // Открываем файл для записи данных
-    std::ofstream outfile("rx_signal.txt", std::ios::out);
+    std::ofstream outfile("1_rx_signal.txt", std::ios::out);
     int16_t rx_i[1000000];
     int16_t rx_q[1000000];
     for (int j = 0; j < 1000000; j++){
@@ -181,7 +181,7 @@ int main(){
 
     int32_t counter = 0;
     int32_t i = 0;
-    while (counter != 30)
+    while (1)
     {
         int16_t *p_dat, *p_end;
 		ptrdiff_t p_inc;
@@ -190,15 +190,28 @@ int main(){
         rxblock = iio_stream_get_next_block(rxstream);
         txblock = iio_stream_get_next_block(txstream);
 
-        if(counter == 2){
+        if(counter % 2 == 0){
             /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
             p_inc = tx_sample_sz;
             p_end = static_cast<int16_t *>(iio_block_end(txblock));
             for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
                 p_dat += p_inc / sizeof(*p_dat)) {
                 
-                    p_dat[0] = 330; /* Real (I) */
-                    p_dat[1] = 330; /* Imag (Q) */
+                    p_dat[0] = 10300; /* Real (I) */
+                    p_dat[1] = 10300; /* Imag (Q) */
+                
+                // p_dat[0] = 10000; /* Real (I) */
+                // p_dat[1] = 10000; /* Imag (Q) */
+            }
+        }else if(counter % 2 == 1){
+            /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
+            p_inc = tx_sample_sz;
+            p_end = static_cast<int16_t *>(iio_block_end(txblock));
+            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+                p_dat += p_inc / sizeof(*p_dat)) {
+                
+                    p_dat[0] = 3300; /* Real (I) */
+                    p_dat[1] = 3300; /* Imag (Q) */
                 
                 // p_dat[0] = 10000; /* Real (I) */
                 // p_dat[1] = 10000; /* Imag (Q) */
@@ -212,10 +225,8 @@ int main(){
 		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
 		     p_dat += p_inc / sizeof(*p_dat)) {
 			/* Example: swap I and Q */
-			// int16_t i = p_dat[0];
-			// int16_t q = p_dat[1];
-            rx_i[i] = p_dat[0];
-            rx_q[i] = p_dat[1];
+			int16_t i = p_dat[0];
+			int16_t q = p_dat[1];
             samples_cnt++;
             i++;
         }
@@ -227,11 +238,6 @@ int main(){
         counter++;
     }
     shutdown();
-    for (int j = 0; j < 1000000; j++){
-        // printf("rx_i[i] = %d\n", rx_i[j]);
-        // printf("rx_q[i] = %d\n", rx_q[j]);
-        outfile << rx_i[j] << ", " << rx_q[j] << std::endl;
-    }
 
     return 0;
 }

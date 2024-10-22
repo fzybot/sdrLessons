@@ -74,12 +74,12 @@ int main(){
 	// TX stream config
 	txcfg.bw_hz = MHZ(1); // 1.5 MHz rf bandwidth
 	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(1); // 2.5 GHz rf frequency
+	txcfg.lo_hz = GHZ(1.015); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 
     // Initialize IIO context
-    ctx = iio_create_context(NULL, "ip:192.168.3.1");
+    ctx = iio_create_context(NULL, "ip:192.168.2.1");
     if(!ctx){
         std::cerr << "Unable to create IIO context addr: " << "ip:192.168.3.1" << std::endl;
         return 1;
@@ -171,7 +171,7 @@ int main(){
     const struct iio_block *txblock, *rxblock;
 
     // Открываем файл для записи данных
-    std::ofstream outfile("rx_signal.txt", std::ios::out);
+    std::ofstream outfile("2_rx_signal.txt", std::ios::out);
     int16_t rx_i[1000000];
     int16_t rx_q[1000000];
     for (int j = 0; j < 1000000; j++){
@@ -197,8 +197,8 @@ int main(){
             for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
                 p_dat += p_inc / sizeof(*p_dat)) {
                 
-                    p_dat[0] = 330; /* Real (I) */
-                    p_dat[1] = 330; /* Imag (Q) */
+                    p_dat[0] = 3130; /* Real (I) */
+                    p_dat[1] = 3130; /* Imag (Q) */
                 
                 // p_dat[0] = 10000; /* Real (I) */
                 // p_dat[1] = 10000; /* Imag (Q) */
