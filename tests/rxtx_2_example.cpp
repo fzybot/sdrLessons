@@ -181,7 +181,7 @@ int main(){
 
     int32_t counter = 0;
     int32_t i = 0;
-    while (counter != 30)
+    while (counter != 40)
     {
         int16_t *p_dat, *p_end;
 		ptrdiff_t p_inc;
@@ -190,26 +190,26 @@ int main(){
         rxblock = iio_stream_get_next_block(rxstream);
         txblock = iio_stream_get_next_block(txstream);
 
-        if(counter == 2){
-            /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-            p_inc = tx_sample_sz;
-            p_end = static_cast<int16_t *>(iio_block_end(txblock));
-            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-                p_dat += p_inc / sizeof(*p_dat)) {
+        // if(counter == 2){
+        //     /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
+        //     p_inc = tx_sample_sz;
+        //     p_end = static_cast<int16_t *>(iio_block_end(txblock));
+        //     for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+        //         p_dat += p_inc / sizeof(*p_dat)) {
                 
-                    p_dat[0] = 3130; /* Real (I) */
-                    p_dat[1] = 3130; /* Imag (Q) */
+        //             p_dat[0] = 3130; /* Real (I) */
+        //             p_dat[1] = 3130; /* Imag (Q) */
                 
-                // p_dat[0] = 10000; /* Real (I) */
-                // p_dat[1] = 10000; /* Imag (Q) */
-            }
-        }
+        //         // p_dat[0] = 10000; /* Real (I) */
+        //         // p_dat[1] = 10000; /* Imag (Q) */
+        //     }
+        // }
 
         /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
 		p_inc = rx_sample_sz;
 		p_end = static_cast<int16_t *>(iio_block_end(rxblock));
-        printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_q), p_end, p_inc);
-		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
+        printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_i), p_end, p_inc);
+		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_i)); p_dat < p_end;
 		     p_dat += p_inc / sizeof(*p_dat)) {
 			/* Example: swap I and Q */
 			// int16_t i = p_dat[0];

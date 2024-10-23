@@ -190,46 +190,46 @@ int main(){
         rxblock = iio_stream_get_next_block(rxstream);
         txblock = iio_stream_get_next_block(txstream);
 
-        if(counter % 2 == 0){
-            /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-            p_inc = tx_sample_sz;
-            p_end = static_cast<int16_t *>(iio_block_end(txblock));
-            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-                p_dat += p_inc / sizeof(*p_dat)) {
-                
-                    p_dat[0] = 10300; /* Real (I) */
-                    p_dat[1] = 10300; /* Imag (Q) */
-                
-                // p_dat[0] = 10000; /* Real (I) */
-                // p_dat[1] = 10000; /* Imag (Q) */
-            }
-        }else if(counter % 2 == 1){
-            /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-            p_inc = tx_sample_sz;
-            p_end = static_cast<int16_t *>(iio_block_end(txblock));
-            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-                p_dat += p_inc / sizeof(*p_dat)) {
-                
-                    p_dat[0] = 3300; /* Real (I) */
-                    p_dat[1] = 3300; /* Imag (Q) */
-                
-                // p_dat[0] = 10000; /* Real (I) */
-                // p_dat[1] = 10000; /* Imag (Q) */
-            }
+        /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
+        if(counter % 4 == 0){
+        p_inc = tx_sample_sz;
+        p_end = static_cast<int16_t *>(iio_block_end(txblock));
+        for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+            p_dat += p_inc / sizeof(*p_dat)) {
+                p_dat[0] = 1500; /* Real (I) */
+                p_dat[1] = 1500; /* Imag (Q) */
+            
+            // p_dat[0] = 10000; /* Real (I) */
+            // p_dat[1] = 10000; /* Imag (Q) */
+        }
+        } 
+        if (counter % 4 == 1){
+
+        p_inc = tx_sample_sz;
+        p_end = static_cast<int16_t *>(iio_block_end(txblock));
+        for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+            p_dat += p_inc / sizeof(*p_dat)) {
+
+            p_dat[0] = 500; /* Real (I) */
+            p_dat[1] = 500;   /* Imag (Q) */
+            
+            // p_dat[0] = 10000; /* Real (I) */
+            // p_dat[1] = 10000; /* Imag (Q) */
+        }
         }
 
-        /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
-		p_inc = rx_sample_sz;
-		p_end = static_cast<int16_t *>(iio_block_end(rxblock));
-        printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_q), p_end, p_inc);
-		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
-		     p_dat += p_inc / sizeof(*p_dat)) {
-			/* Example: swap I and Q */
-			int16_t i = p_dat[0];
-			int16_t q = p_dat[1];
-            samples_cnt++;
-            i++;
-        }
+        // /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
+		// p_inc = rx_sample_sz;
+		// p_end = static_cast<int16_t *>(iio_block_end(rxblock));
+        // printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_q), p_end, p_inc);
+		// for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
+		//      p_dat += p_inc / sizeof(*p_dat)) {
+		// 	/* Example: swap I and Q */
+		// 	int16_t i = p_dat[0];
+		// 	int16_t q = p_dat[1];
+        //     samples_cnt++;
+        //     i++;
+        // }
         printf("samples_cnt = %d\n", samples_cnt);
         printf("i = %d\n", i);
 

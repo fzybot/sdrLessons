@@ -8,8 +8,13 @@ with open('/home/novosibirsk/dev/sdrLessons/build/2_rx_signal.txt', 'r') as file
 
 # Инициализируем список для хранения данных
 data = []
+imag = []
+real = []
+count = []
+
 
 # Обрабатываем каждую строку
+counter  = 0
 for line in lines:
     line = line.strip()  # Убираем лишние пробелы
     if line:  # Пропускаем пустые строки
@@ -19,6 +24,10 @@ for line in lines:
             # Создаём комплексное число (I + jQ)
             complex_number = complex(numbers[0], numbers[1])
             data.append(complex_number)
+            imag.append(numbers[1])
+            real.append(numbers[0])
+            count.append(counter)
+            counter += 1
         except ValueError:
             print(f"Ошибка преобразования строки: {line}")
 
@@ -27,10 +36,10 @@ rx_nothreads = np.array(data)
 
 # Вывод загруженных данных
 #print(rx_nothreads)
-plt.figure(1)
-plt.plot(np.abs(data))  # Используем scatter для диаграммы созвездия
-plt.xlabel('I (Real)')
-plt.ylabel('Q (Imaginary)')
-plt.title('QAM Constellation Diagram')
-plt.grid(True)
+fig, axs = plt.subplots(2, 1, layout='constrained')
+# plt.figure(1)
+axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
+axs[0].plot(count,(imag),color='red')  # Используем scatter для диаграммы созвездия
+axs[0].plot(count,(real), color='blue')  # Используем scatter для диаграммы созвездия
+
 plt.show()
