@@ -172,8 +172,8 @@ int main(){
 	rxbuf = iio_device_create_buffer(rx_dev, 0, rxmask);
     txbuf = iio_device_create_buffer(tx_dev, 0, txmask);
 
-    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 12));
-    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 12));
+    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 14));
+    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 14));
     // RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
     rx_sample_sz = iio_device_get_sample_size(rx_dev, rxmask);
@@ -194,7 +194,7 @@ int main(){
 
     int32_t counter = 0;
     int32_t i = 0;
-    while (counter != 80)
+    while (counter != 40)
     {
         int16_t *p_dat, *p_end;
 		ptrdiff_t p_inc;
