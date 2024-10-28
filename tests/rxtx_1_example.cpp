@@ -30,6 +30,8 @@ static struct iio_stream  *txstream = NULL;
 static struct iio_channels_mask *rxmask = NULL;
 static struct iio_channels_mask *txmask = NULL;
 
+
+
 /* cleanup and exit */
 static void shutdown(void)
 {
@@ -47,7 +49,16 @@ static void shutdown(void)
 
 	printf("* Destroying context\n");
 	if (ctx) { iio_context_destroy(ctx); }
-	//exit(0);
+}
+
+struct sigaction old_action;
+
+void sigint_handler(int sig_no)
+{
+    printf("CTRL-C pressed\n");
+    sigaction(SIGINT, &old_action, NULL);
+    shutdown();
+    exit(0);
 }
 
 /* common RX and TX streaming params */
@@ -60,6 +71,10 @@ struct stream_cfg {
 
 int main(){
     std::cout << "Hello, world!" << std::endl;
+    struct sigaction action;
+    memset(&action, 0, sizeof(action));
+    action.sa_handler = &sigint_handler;
+    sigaction(SIGINT, &action, &old_action);
 
     // Конфиг. параметры "потоков"
 	struct stream_cfg rxcfg;
@@ -67,24 +82,24 @@ int main(){
 
     // RX stream config
 	rxcfg.bw_hz = MHZ(1);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s rx sample rate
-	rxcfg.lo_hz = GHZ(1.015); // 2.5 GHz rf frequency
+	rxcfg.fs_hz = MHZ(2);   // 2.5 MS/s rx sample rate
+	rxcfg.lo_hz = MHZ(900); // 2.5 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
 	// TX stream config
-	txcfg.bw_hz = MHZ(1); // 1.5 MHz rf bandwidth
-	txcfg.fs_hz = MHZ(2.5);   // 2.5 MS/s tx sample rate
-	txcfg.lo_hz = GHZ(1); // 2.5 GHz rf frequency
+	txcfg.bw_hz = MHZ(1); // 1 MHz rf bandwidth
+	txcfg.fs_hz = MHZ(2);   // 2.5 MS/s tx sample rate
+	txcfg.lo_hz = MHZ(1000); // 2.5 GHz rf frequency
 	txcfg.rfport = "A"; // port A (select for rf freq.)
 
 
     // Initialize IIO context
     ctx = iio_create_context(NULL, "ip:192.168.3.1");
     if(!ctx){
-        std::cerr << "Unable to create IIO context addr: " << "ip:192.168.3.1" << std::endl;
+        std::cerr << "Unable to create IIO context addr: " << "ip:192.168.2.1" << std::endl;
         return 1;
     } else {
-        std::cout << "IIO context created successfully, addr: " << "ip:192.168.3.1" << std::endl;
+        std::cout << "IIO context created successfully, addr: " << "ip:192.168.2.1" << std::endl;
     }
 
 // The ad9361-phy driver entirely Controls the AD9361.
@@ -159,8 +174,8 @@ int main(){
 	rxbuf = iio_device_create_buffer(rx_dev, 0, rxmask);
     txbuf = iio_device_create_buffer(tx_dev, 0, txmask);
 
-    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 13));
-    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 13));
+    rxstream = iio_buffer_create_stream(rxbuf, 4, pow(2, 12));
+    txstream = iio_buffer_create_stream(txbuf, 4, pow(2, 12));
     // RX and TX sample size
 	size_t rx_sample_sz, tx_sample_sz;
     rx_sample_sz = iio_device_get_sample_size(rx_dev, rxmask);
@@ -172,16 +187,21 @@ int main(){
 
     // Открываем файл для записи данных
     std::ofstream outfile("1_rx_signal.txt", std::ios::out);
+    float tx_q[330] = {1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
+    float tx_i[330] = {1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,-1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,1.1,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0};
     int16_t rx_i[1000000];
     int16_t rx_q[1000000];
     for (int j = 0; j < 1000000; j++){
         rx_i[j] = 0;
         rx_q[j] = 0;
     }
+    // for (int j = 0; j < 330; j++){
+    //     printf("i = %d\n", static_cast<int16_t>(rx_q[j]));
+    // }
 
     int32_t counter = 0;
     int32_t i = 0;
-    while (1)
+    while (counter < 80)
     {
         int16_t *p_dat, *p_end;
 		ptrdiff_t p_inc;
@@ -191,45 +211,52 @@ int main(){
         txblock = iio_stream_get_next_block(txstream);
 
         /* WRITE: Get pointers to TX buf and write IQ to TX buf port 0 */
-        if(counter % 4 == 0){
-        p_inc = tx_sample_sz;
-        p_end = static_cast<int16_t *>(iio_block_end(txblock));
-        for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-            p_dat += p_inc / sizeof(*p_dat)) {
-                p_dat[0] = 1500; /* Real (I) */
-                p_dat[1] = 1500; /* Imag (Q) */
-            
-            // p_dat[0] = 10000; /* Real (I) */
-            // p_dat[1] = 10000; /* Imag (Q) */
-        }
+        if(counter % 2 == 0){
+            p_inc = tx_sample_sz;
+            p_end = static_cast<int16_t *>(iio_block_end(txblock));
+            int counter_i = 0;
+            for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+                p_dat += p_inc / sizeof(*p_dat))
+            {
+                if(counter_i >= 1000 && counter_i < 1330){
+                    p_dat[0] = static_cast<int16_t>(rx_i[counter_i]) * pow(2, 12); /* Real (I) */
+                    p_dat[1] = static_cast<int16_t>(rx_q[counter_i]) * pow(2, 12);; /* Imag (Q) */
+                } else {
+                    p_dat[0] = 100; /* Real (I) */
+                    p_dat[1] = 100; /* Imag (Q) */
+                }
+                counter_i++;
+            }
         } 
-        if (counter % 4 == 1){
+        // if (counter % 4 == 1){
 
-        p_inc = tx_sample_sz;
-        p_end = static_cast<int16_t *>(iio_block_end(txblock));
-        for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
-            p_dat += p_inc / sizeof(*p_dat)) {
+        // p_inc = tx_sample_sz;
+        // p_end = static_cast<int16_t *>(iio_block_end(txblock));
+        // for (p_dat = static_cast<int16_t *>(iio_block_first(txblock, tx0_i)); p_dat < p_end;
+        //     p_dat += p_inc / sizeof(*p_dat)) {
 
-            p_dat[0] = 500; /* Real (I) */
-            p_dat[1] = 500;   /* Imag (Q) */
+        //     p_dat[0] = 500; /* Real (I) */
+        //     p_dat[1] = 500;   /* Imag (Q) */
             
-            // p_dat[0] = 10000; /* Real (I) */
-            // p_dat[1] = 10000; /* Imag (Q) */
-        }
-        }
-
-        // /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
-		// p_inc = rx_sample_sz;
-		// p_end = static_cast<int16_t *>(iio_block_end(rxblock));
-        // printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_q), p_end, p_inc);
-		// for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_q)); p_dat < p_end;
-		//      p_dat += p_inc / sizeof(*p_dat)) {
-		// 	/* Example: swap I and Q */
-		// 	int16_t i = p_dat[0];
-		// 	int16_t q = p_dat[1];
-        //     samples_cnt++;
-        //     i++;
+        //     // p_dat[0] = 10000; /* Real (I) */
+        //     // p_dat[1] = 10000; /* Imag (Q) */
         // }
+        // }
+
+        /* READ: Get pointers to RX buf and read IQ from RX buf port 0 */
+		p_inc = rx_sample_sz;
+		p_end = static_cast<int16_t *>(iio_block_end(rxblock));
+        printf("iio_block_first = %d, iio_block_end = %d, p_inc = %d\n", iio_block_first(rxblock, rx0_i), p_end, p_inc);
+		for (p_dat = static_cast<int16_t *> (iio_block_first(rxblock, rx0_i)); p_dat < p_end;
+		     p_dat += p_inc / sizeof(*p_dat)) {
+			/* Example: swap I and Q */
+			// int16_t i = p_dat[0];
+			// int16_t q = p_dat[1];
+            rx_i[i] = p_dat[0];
+            rx_q[i] = p_dat[1];
+            samples_cnt++;
+            i++;
+        }
         printf("samples_cnt = %d\n", samples_cnt);
         printf("i = %d\n", i);
 
@@ -238,6 +265,11 @@ int main(){
         counter++;
     }
     shutdown();
+    for (int j = 0; j < 1000000; j++){
+        // printf("rx_i[i] = %d\n", rx_i[j]);
+        // printf("rx_q[i] = %d\n", rx_q[j]);
+        outfile << rx_i[j] << ", " << rx_q[j] << std::endl;
+    }
 
     return 0;
 }

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Открываем файл для чтения
-with open('/home/novosibirsk/dev/sdrLessons/build/2_rx_signal.txt', 'r') as file:
+with open('../../build/1_rx_signal.txt', 'r') as file:
     # Читаем все строки из файла
     lines = file.readlines()
 
@@ -43,3 +43,6 @@ axs[0].plot(count,(imag),color='red')  # Используем scatter для д�
 axs[0].plot(count,(real), color='blue')  # Используем scatter для диаграммы созвездия
 
 plt.show()
+
+start = 14806
+end = 14806 + 330
