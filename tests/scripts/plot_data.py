@@ -157,7 +157,7 @@ def costas_loop_QAM(rx, fs, mu, estimated_frequency, theta_init,
     return carrier_estimation, theta, complex_exp_estimation
 
 # Открываем файл для чтения
-with open('../../build/2_rx_signal.txt', 'r') as file:
+with open('../../build/single_adalm_rx.txt', 'r') as file:
     # Читаем все строки из файла
     lines = file.readlines()
 
@@ -189,15 +189,17 @@ for line in lines:
 # Преобразуем список в массив NumPy
 # rx_nothreads = np.array(data)
 # fig, axs = plt.subplots(2, 1, layout='constrained')
-# # plt.figure(1)
-# #axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
+# plt.figure(1)
+#axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
 # axs[0].plot(count,(imag),color='red')  # Используем scatter для диаграммы созвездия
 # axs[0].plot(count,(real), color='blue')  # Используем scatter для диаграммы созвездия
 # plt.show()
 # Вывод загруженных данных
 # print(rx_nothreads)
-filtered_i = real[107500:112500 - 1]
-filtered_q = imag[107500:112500 - 1]
+start = 74000
+end = 78000
+filtered_i = real[start:end - 1]
+filtered_q = imag[start:end - 1]
 # fig, axs = plt.subplots(2, 1, layout='constrained')
 # # plt.figure(1)
 # #axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
@@ -213,18 +215,14 @@ for i in range(len(filtered_i)):
     rx_complex.append(complex(filtered_i[i], filtered_q[i]))
 
 rx = np.array(rx_complex) / 2**11
-# # extract real part using numpy array 
-# x = rx.real 
-# # extract imaginary part using numpy array 
-# y = rx.imag 
-# # plot the complex numbers 
-# plt.plot(x, y, 'g*') 
-# plt.ylabel('Imaginary') 
-# plt.xlabel('Real') 
-# plt.show() 
+x = rx.real 
+y = rx.imag 
+# plot the complex numbers 
+fig, axs = plt.subplots(2, 1, layout='constrained')
+axs[0].plot(x, y, 'g*') 
 print(len(rx))
 # # COARSE FREQUENCY CORRECTION
-sampling_rate = int(2e6)
+sampling_rate = int(10e6)
 Ts = 1 / sampling_rate
 t = np.arange(0, len(rx) * Ts, Ts)
 r4th = rx**4
@@ -235,32 +233,28 @@ coarse_demodulated_baseband_signal = rx * coarse_demodulator
 # plot_spectrum(coarse_demodulated_baseband_signal, Ts)
 # plot_spectrum(r4th, Ts)
 # plt.show() 
-x = coarse_demodulated_baseband_signal.real 
-# extract imaginary part using numpy array 
-y = coarse_demodulated_baseband_signal.imag 
-# plot the complex numbers 
-plt.plot(x, y, 'g*') 
-plt.ylabel('Imaginary') 
-plt.xlabel('Real') 
-plt.show()
+# x = coarse_demodulated_baseband_signal.real 
+# y = coarse_demodulated_baseband_signal.imag 
+# plt.plot(x, y, 'g*') 
+# plt.ylabel('Imaginary') 
+# plt.xlabel('Real') 
+# plt.show()
 
 # BAND SHIFTING BEFORE PHASE CORRECTION
 fc = int(2e6)
 shifted_before_CL = coarse_demodulated_baseband_signal * np.exp( 1j * 2 * np.pi * fc * t)
-plot_spectrum(shifted_before_CL, Ts)
+# plot_spectrum(shifted_before_CL, Ts)
 carrier_est, theta, complex_exp_est = costas_loop_QAM(
-    np.real(shifted_before_CL), sampling_rate, 0.5, fc, np.pi  / 2, True)
+    np.real(shifted_before_CL), sampling_rate, 0.2, fc, np.pi  / 6, False)
 baseband_signal = complex_exp_est * shifted_before_CL
-plot_spectrum(baseband_signal, Ts)
-plt.show()
+# plot_spectrum(baseband_signal, Ts)
+# plt.show()
 
 x = baseband_signal.real 
 # extract imaginary part using numpy array 
 y = baseband_signal.imag 
 # plot the complex numbers 
-plt.plot(x, y, 'g*') 
-plt.ylabel('Imaginary') 
-plt.xlabel('Real') 
+axs[1].plot(x, y, 'g*') 
 
 
 plt.show()

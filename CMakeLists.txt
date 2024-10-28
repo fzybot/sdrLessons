@@ -30,6 +30,7 @@ add_executable(main ${MAIN_SOURCE_FILES})
 add_executable(chat_test ${TEST_SOURCE_FILES})
 add_executable(ex_1 tests/rxtx_1_example.cpp)
 add_executable(ex_2 tests/rxtx_2_example.cpp)
+add_executable(single tests/single_adalm_rxtx_costas.cpp)
 
 # Линковка с библиотеками (Qt)
 #   Для работы с модулями Qt и Gnuradio
@@ -38,3 +39,4 @@ target_link_libraries(main ${LIBIIO_LIBRARIES})
 target_link_libraries(chat_test ${LIBIIO_LIBRARIES})
 target_link_libraries(ex_1  ${LIBIIO_LIBRARIES})
 target_link_libraries(ex_2  ${LIBIIO_LIBRARIES})
+target_link_libraries(single  ${LIBIIO_LIBRARIES})
