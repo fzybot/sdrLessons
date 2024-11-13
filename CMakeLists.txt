@@ -4,6 +4,7 @@ project(PlutoSDR CXX C)
 
 # Опция для включения или отключения установки зависимостей
 option(INSTALL_DEPS "Установить зависимости" ON)
+option(UNIT_TESTS_ENABLED "Build unit tests" ON)
 
 # Для работы с модулями Qt и Gnuradio
 # find_package(Qt5 COMPONENTS Widgets Charts REQUIRED)
@@ -40,3 +41,8 @@ target_link_libraries(chat_test ${LIBIIO_LIBRARIES})
 target_link_libraries(ex_1  ${LIBIIO_LIBRARIES})
 target_link_libraries(ex_2  ${LIBIIO_LIBRARIES})
 target_link_libraries(single  ${LIBIIO_LIBRARIES})
+
+
+if(UNIT_TESTS_ENABLED)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
