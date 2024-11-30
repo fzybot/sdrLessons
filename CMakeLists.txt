@@ -5,14 +5,15 @@ project(PlutoSDR CXX C)
 # Опция для включения или отключения установки зависимостей
 option(INSTALL_DEPS "Установить зависимости" ON)
 option(UNIT_TESTS_ENABLED "Build unit tests" ON)
+option(PLUTO_TIMESTAMP "Build pluto with timestamp" ON)
 
 # Для работы с модулями Qt и Gnuradio
 # find_package(Qt5 COMPONENTS Widgets Charts REQUIRED)
 # find_package(Gnuradio REQUIRED)
 
+# RF frontend driver
 find_library(LIBIIO_LIBRARIES iio)
 message(${LIBIIO_LIBRARIES})
-
 
 set(MAIN_SOURCE_FILES
     src/main.cpp
@@ -27,20 +28,12 @@ set(TEST_SOURCE_FILES
 
 
 # Добавляем исполняемый файл
-add_executable(main ${MAIN_SOURCE_FILES})
-add_executable(chat_test ${TEST_SOURCE_FILES})
-add_executable(ex_1 tests/rxtx_1_example.cpp)
-add_executable(ex_2 tests/rxtx_2_example.cpp)
-add_executable(single tests/single_adalm_rxtx_costas.cpp)
+# add_executable(main ${MAIN_SOURCE_FILES})
 
 # Линковка с библиотеками (Qt)
 #   Для работы с модулями Qt и Gnuradio
 # target_link_libraries(main Qt5::Core Qt5::Widgets Qt5::Charts)
-target_link_libraries(main ${LIBIIO_LIBRARIES})
-target_link_libraries(chat_test ${LIBIIO_LIBRARIES})
-target_link_libraries(ex_1  ${LIBIIO_LIBRARIES})
-target_link_libraries(ex_2  ${LIBIIO_LIBRARIES})
-target_link_libraries(single  ${LIBIIO_LIBRARIES})
+# target_link_libraries(main ${LIBIIO_LIBRARIES})
 
 
 if(UNIT_TESTS_ENABLED)
