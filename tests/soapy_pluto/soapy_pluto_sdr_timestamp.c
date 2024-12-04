@@ -79,7 +79,7 @@ int main(void)
     tx_mtu = 6; // IQ samples (12 words)
 
     //sample count
-    size_t sample_count = 4;
+    size_t sample_count = 100;
 
     //create buffers for samples (unsigned signed int16's - although we're transmitting and receiving signed numbers)
     //double size for I and Q samples
@@ -111,24 +111,6 @@ int main(void)
     //here goes
     printf("Start test...\n");
 
-    //ensure buffers in device are empty
-    // for (size_t buffers_read = 0; buffers_read < 128; /* in loop */)
-    // {
-    //     void *buffs[] = {rx_buff[0][0], rx_buff[0][1]}; //array of buffers
-    //     int flags; //flags set by receive operation
-    //     long long timeNs; //timestamp for receive buffer
-
-    //     // Read samples
-    //     int sr = SoapySDRDevice_readStream(sdr, rxStream, buffs, rx_mtu, &flags, &timeNs, 100000); // 100ms timeout
-    //     if (sr < 0)
-    //     {
-    //         // Skip read on error (likely timeout)
-    //         continue;
-    //     }
-
-    //     // Increment number of buffers read
-    //     buffers_read++;
-    // }
 
     long long last_time = 0;
     #if 0
@@ -152,13 +134,9 @@ int main(void)
             continue;
         }
         rx_timestamps[buffers_read] = timeNs;
-        for (int i = 0; i < 2 * rx_mtu; i+=2){
-            printf("I = %d, Q = %d\n", &buffs[i], &buffs[i+1]);
-        }
-            // fwrite(buffs[0], sizeof(uint16_t)*2*rx_mtu, 1, file);
 
-            // Dump info
-            printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
+        // Dump info
+        printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
         last_time = timeNs;
 
         // Calculate transmit time 4ms in future
@@ -202,11 +180,11 @@ int main(void)
     SoapySDRDevice_unmake(sdr);
 
     // Process each rx buffer, looking for transmitted timestamp
-    for (size_t j = 0; j < channel_count; j++)
-    {
-        printf("Checking channel %zu\n", j);
-        check_channel(sample_count, channel_count, j, tx_timestamps, rx_timestamps, (uint16_t**)rx_buff, rx_mtu);
-    }
+    // for (size_t j = 0; j < channel_count; j++)
+    // {
+    //     printf("Checking channel %zu\n", j);
+    //     check_channel(sample_count, channel_count, j, tx_timestamps, rx_timestamps, (uint16_t**)rx_buff, rx_mtu);
+    // }
 
     //all done
     printf("test complete!\n");
