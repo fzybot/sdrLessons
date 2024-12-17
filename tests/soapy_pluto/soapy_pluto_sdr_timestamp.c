@@ -3,6 +3,9 @@
 #include <stdio.h> //printf
 #include <stdlib.h> //free
 #include <stdint.h>
+#include <complex.h>
+
+typedef _Complex float cf_t;
 
 static void check_channel(size_t sample_count, size_t channel_count,
                           size_t channel_index,
@@ -76,21 +79,25 @@ int main(void)
     printf("MTU - TX: %lu, RX: %lu\n", tx_mtu, rx_mtu);
 
     //tx buffer could be made a lot shorter, the library *should* fill in the blank space
-    tx_mtu = 6; // IQ samples (12 words)
+    //tx_mtu = 6; // IQ samples (12 words)
 
     //sample count
-    size_t sample_count = 4;
+    size_t sample_count = 100;
 
     //create buffers for samples (unsigned signed int16's - although we're transmitting and receiving signed numbers)
     //double size for I and Q samples
-    uint16_t* rx_buff[sample_count][channel_count];
-    for (size_t i = 0; i < sample_count; i++)
+
+    // cf_t* rx_buff_cf;
+    // rx_buff_cf = malloc(sizeof(cf_t)*rx_mtu);
+    float *rx_buff[channel_count];
     for (size_t j = 0; j < channel_count; j++)
     {
-        rx_buff[i][j] = malloc(sizeof(uint16_t)*2*rx_mtu);
+        rx_buff[j] = malloc(sizeof(float)*2*rx_mtu);
     }
+    
     long long rx_timestamps[sample_count];
     uint16_t tx_buff[2*tx_mtu];
+    
     long long tx_timestamps[sample_count];
 
     //prepare fixed bytes in transmit buffer
@@ -111,25 +118,6 @@ int main(void)
     //here goes
     printf("Start test...\n");
 
-    //ensure buffers in device are empty
-    // for (size_t buffers_read = 0; buffers_read < 128; /* in loop */)
-    // {
-    //     void *buffs[] = {rx_buff[0][0], rx_buff[0][1]}; //array of buffers
-    //     int flags; //flags set by receive operation
-    //     long long timeNs; //timestamp for receive buffer
-
-    //     // Read samples
-    //     int sr = SoapySDRDevice_readStream(sdr, rxStream, buffs, rx_mtu, &flags, &timeNs, 100000); // 100ms timeout
-    //     if (sr < 0)
-    //     {
-    //         // Skip read on error (likely timeout)
-    //         continue;
-    //     }
-
-    //     // Increment number of buffers read
-    //     buffers_read++;
-    // }
-
     long long last_time = 0;
     #if 0
     FILE *file = fopen("txdata.pcm", "a+");
@@ -137,28 +125,30 @@ int main(void)
     fclose(file);
     #endif
     //FILE *file = fopen("txdata.pcm", "a+");
+    const long          timeoutUs = 400000; // arbitrarily chosen
+    int16_t *buffer;
     for (size_t buffers_read = 0; buffers_read < sample_count; buffers_read++)
     {
-        void *buffs[1]; //array of buffers
-        int flags; //flags set by receive operation
+        void *buffs[] = {buffer};
+        int flags;        // flags set by receive operation
         long long timeNs; //timestamp for receive buffer
 
-        buffs[0] = rx_buff[buffers_read][0];
+        //buffs[0] = rx_buff[0];
         //buffs[1] = rx_buff[buffers_read][1];
-        int sr = SoapySDRDevice_readStream(sdr, rxStream, buffs, rx_mtu, &flags, &timeNs, 100000);
+        int sr = SoapySDRDevice_readStream(sdr, rxStream, buffs, rx_mtu, &flags, &timeNs, timeoutUs);
         if (sr < 0)
         {
             // Skip read on error (likely timeout)
             continue;
         }
         rx_timestamps[buffers_read] = timeNs;
-        for (int i = 0; i < 2 * rx_mtu; i+=2){
-            printf("I = %d, Q = %d\n", &buffs[i], &buffs[i+1]);
-        }
             // fwrite(buffs[0], sizeof(uint16_t)*2*rx_mtu, 1, file);
 
-            // Dump info
-            printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
+        // Dump info
+        printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
+        for (int i = 0; i < 2*rx_mtu; i+=2){
+            printf("i = %d, I = %d, Q = %d\n", i, buffer[i], buffer[i+1]);
+        }
         last_time = timeNs;
 
         // Calculate transmit time 4ms in future
@@ -178,15 +168,15 @@ int main(void)
             tx_buff[2 + i] = tx_time_byte << 4;
         }
 
-        // Send buffer
-        buffs[0] = tx_buff;
-        buffs[1] = tx_buff;
+        // // Send buffer
+        // buffs[0] = tx_buff;
+        // buffs[1] = tx_buff;
         flags = SOAPY_SDR_HAS_TIME;
-        int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)buffs, tx_mtu, &flags, tx_time, 100000);
-        if ((size_t)st != tx_mtu)
-        {
-            printf("TX Failed: %i\n", st);
-        }
+        // int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)buffs, tx_mtu, &flags, tx_time, 100000);
+        // if ((size_t)st != tx_mtu)
+        // {
+        //     printf("TX Failed: %i\n", st);
+        // }
     }
     //fclose(file);
 
@@ -215,8 +205,8 @@ int main(void)
     for (size_t i = 0; i < sample_count; i++)
     for (size_t j = 0; j < channel_count; j++)
     {
-        free(rx_buff[i][j]);
-        rx_buff[i][j] = NULL;
+        //free(rx_buff);
+        //rx_buff[i][j] = NULL;
     }
 
     return EXIT_SUCCESS;
