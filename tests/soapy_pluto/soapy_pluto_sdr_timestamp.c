@@ -65,6 +65,12 @@ int main(void)
         SoapySDRDevice_unmake(sdr);
         return EXIT_FAILURE;
     }
+    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, channels, 10.0) !=0 ){
+        printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
+    }
+    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, channels, -50.0) !=0 ){
+        printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
+    }
     SoapySDRStream *txStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_TX, SOAPY_SDR_CS16, channels, channel_count, NULL);
     if (txStream == NULL)
     {
@@ -92,8 +98,8 @@ int main(void)
     //DAC samples are left aligned 12-bits, so each byte is left shifted into place
     for (int i = 0; i < 2 * rx_mtu; i+=2)
     {
-        tx_buff[i] = 10000;
-        tx_buff[+1] = 10000;
+        tx_buff[i] = 15000;
+        tx_buff[+1] = 15000;
     }
     for(size_t i = 0; i < 2; i++)
     {
