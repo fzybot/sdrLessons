@@ -117,6 +117,24 @@ int main(void)
 
     //here goes
     printf("Start test...\n");
+    const long          timeoutUs = 400000; // arbitrarily chosen
+    int16_t *buffer;
+    // ensure buffers in device are empty
+    for (size_t buffers_read = 0; buffers_read < 128; /* in loop */)
+    {
+        void *buffs[] = {buffer}; //void *buffs[] = {rx_buff[0][0], rx_buff[0][1]}; //array of buffers
+        int flags; //flags set by receive operation
+        long long timeNs; //timestamp for receive buffer
+        // Read samples
+        int sr = SoapySDRDevice_readStream(sdr, rxStream, buffs, rx_mtu, &flags, &timeNs, timeoutUs); // 100ms timeout
+        if (sr < 0)
+        {
+            // Skip read on error (likely timeout)
+            continue;
+        }
+        // Increment number of buffers read
+        buffers_read++;
+    }
 
     long long last_time = 0;
     #if 0
@@ -125,8 +143,7 @@ int main(void)
     fclose(file);
     #endif
     //FILE *file = fopen("txdata.pcm", "a+");
-    const long          timeoutUs = 400000; // arbitrarily chosen
-    int16_t *buffer;
+    
     for (size_t buffers_read = 0; buffers_read < sample_count; buffers_read++)
     {
         void *buffs[] = {buffer};
@@ -172,11 +189,11 @@ int main(void)
         // buffs[0] = tx_buff;
         // buffs[1] = tx_buff;
         flags = SOAPY_SDR_HAS_TIME;
-        // int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)buffs, tx_mtu, &flags, tx_time, 100000);
-        // if ((size_t)st != tx_mtu)
-        // {
-        //     printf("TX Failed: %i\n", st);
-        // }
+        int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)buffs, tx_mtu, &flags, tx_time, 100000);
+        if ((size_t)st != tx_mtu)
+        {
+            printf("TX Failed: %i\n", st);
+        }
     }
     //fclose(file);
 
