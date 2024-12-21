@@ -14,28 +14,23 @@ option(PLUTO_TIMESTAMP "Build pluto with timestamp" ON)
 # find_package(Gnuradio REQUIRED)
 
 # RF frontend driver
-find_library(LIBIIO_LIBRARIES iio)
-message(${LIBIIO_LIBRARIES})
+find_package(SoapySDR REQUIRED)
 
 set(MAIN_SOURCE_FILES
-    src/main.cpp
+    src/main.c
 )
-set(TEST_SOURCE_FILES
-    tests/chat_test.cpp
-)
-
 # Путь до необходимых библиотек
 # include_directories(${PATH}/libiio)
 # link_directories(${PATH}/libiio)
 
 
 # Добавляем исполняемый файл
-# add_executable(main ${MAIN_SOURCE_FILES})
+add_executable(main ${MAIN_SOURCE_FILES})
 
 # Линковка с библиотеками (Qt)
 #   Для работы с модулями Qt и Gnuradio
 # target_link_libraries(main Qt5::Core Qt5::Widgets Qt5::Charts)
-# target_link_libraries(main ${LIBIIO_LIBRARIES})
+target_link_libraries(main ${SoapySDR_LIBRARIES})
 
 
 if(UNIT_TESTS_ENABLED)

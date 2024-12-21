@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.16)
 
 project(soapy_pluto_sdr_timestamp)
 
 find_package(SoapySDR REQUIRED)
-#set(SoapySDR "/home/srsRAN/lib/SoapySDR/modules0.8/libPlutoSDRSupport.so")
 
 if (SoapySDR_FOUND)
     message(STATUS "SoapySDR_INCLUDE_DIRS: ${SoapySDR_INCLUDE_DIRS}")
