@@ -62,7 +62,7 @@ int main(void)
     if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, channels, 10.0) !=0 ){
         printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
     }
-    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, channels, -50.0) !=0 ){
+    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, channels, -90.0) !=0 ){
         printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
     }
     SoapySDRStream *txStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_TX, SOAPY_SDR_CS16, channels, channel_count, NULL);
@@ -80,13 +80,14 @@ int main(void)
     
 
     int16_t tx_buff[2*tx_mtu];
-    int16_t rx_buffer[2*rx_mtu];
-    
+    // int16_t rx_buffer[2*rx_mtu];
+    int16_t *rx_buffer = (int16_t *)malloc(2 * rx_mtu * sizeof(int16_t));
+
     //заполнение tx_buff значениями сэмплов первые 16 бит - I, вторые 16 бит - Q.
     for (int i = 0; i < 2 * rx_mtu; i+=2)
     {
         tx_buff[i] = 15000;
-        tx_buff[+1] = 15000;
+        tx_buff[i+1] = 15000;
     }
 
     //prepare fixed bytes in transmit buffer
@@ -135,7 +136,7 @@ int main(void)
     #endif
 
     // Создаем файл для записи сэмплов с rx_buff
-    FILE *file = fopen("txdata.pcm", "a+");
+    FILE *file = fopen("txdata.pcm", "w");
     
     // Количество итерация
     size_t iteration_count = 100;
@@ -155,7 +156,7 @@ int main(void)
 
         // Dump info
         printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
-        fwrite(rx_buffs, 2* rx_mtu * sizeof(int16_t), 1, file);
+        fwrite(rx_buffer, 2* rx_mtu * sizeof(int16_t), 1, file);
         last_time = timeNs;
 
         // Calculate transmit time 4ms in future
@@ -173,7 +174,8 @@ int main(void)
 
         // Send buffer
         void *tx_buffs[] = {tx_buff};
-        if( (buffers_read % 2 == 0) ){
+        if( (buffers_read == 11) ){
+            printf("buffers_read: %d\n", buffers_read);
             flags = SOAPY_SDR_HAS_TIME;
             int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, tx_mtu, &flags, tx_time, 400000);
             if ((size_t)st != tx_mtu)

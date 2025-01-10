@@ -86,7 +86,7 @@ int main(void)
     for (int i = 0; i < 2 * rx_mtu; i+=2)
     {
         tx_buff[i] = 15000;
-        tx_buff[+1] = 15000;
+        tx_buff[i+1] = 15000;
     }
 
     //prepare fixed bytes in transmit buffer
@@ -173,7 +173,7 @@ int main(void)
 
         // Send buffer
         void *tx_buffs[] = {tx_buff};
-        if( (buffers_read % 2 == 0) ){
+        if( (buffers_read == 11) ){
             flags = SOAPY_SDR_HAS_TIME;
             int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, tx_mtu, &flags, tx_time, 400000);
             if ((size_t)st != tx_mtu)
