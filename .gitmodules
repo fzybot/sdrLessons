@@ -16,4 +16,4 @@
 [submodule "SoapyPlutoSDR"]
 	path = SoapyPlutoSDR
 	url = https://github.com/TelecomDep/SoapyPlutoSDR.git
-    branch = sdr_gadget_timestamping
+	branch = sdr_gadget_timestamping
