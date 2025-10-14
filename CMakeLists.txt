@@ -1,18 +1,16 @@
-# Минимальная версия Qt, которая поддерживает Qt Charts
 cmake_minimum_required(VERSION 3.16)
 project(PlutoSDR C)
 
 set(CMAKE_BUILD_TYPE Debug)
 
-# Опция для включения или отключения установки зависимостей
-option(INSTALL_DEPS "Установить зависимости" ON)
-option(PLUTO_TIMESTAMP "Build pluto with timestamp" ON)
-
 # RF frontend driver
 find_package(SoapySDR REQUIRED)
 
+include_directories("include/")
+
 set(MAIN_SOURCE_FILES
-    src/main.c
+    main.c
+    src/pluto_sdr_lib.c
 )
 
 # Добавляем исполняемый файл

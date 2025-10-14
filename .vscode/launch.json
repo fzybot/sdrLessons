@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/novosibirsk/dev/sdrLessons/build/tests/soapy_pluto/soapy_pluto_sdr_timestamp",
+            "program": "/home/nsk/dev/sdrLessons/build/main",
             "args": [],
             "stopAtEntry": true,
             "cwd": "${fileDirname}",
@@ -27,7 +27,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "visualizerFile": "/home/novosibirsk/.config/Code/User/workspaceStorage/ad79549c93455af3243d42210875791d/tonka3000.qtvsctools/qt.natvis.xml"
+            "visualizerFile": "/home/nsk/.config/Code/User/workspaceStorage/ad79549c93455af3243d42210875791d/tonka3000.qtvsctools/qt.natvis.xml"
         }
     ]
 }
