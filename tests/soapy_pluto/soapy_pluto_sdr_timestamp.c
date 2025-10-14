@@ -48,7 +48,7 @@ int main(void)
     printf("SoapySDRDevice_getFrequency tx: %lf\n", SoapySDRDevice_getFrequency(sdr, SOAPY_SDR_TX, 0));
     
     // Настройка каналов и стримов
-    size_t channels[] = {0} ; // {0} or {0, 1} 
+    size_t channels[] = {0, 1} ; // {0} or {0, 1} 
     // TODO: - с вариантом {0, 1} необходимо разробраться, не работают 2 канала
 
     size_t channel_count = sizeof(channels) / sizeof(channels[0]);
@@ -59,11 +59,11 @@ int main(void)
         SoapySDRDevice_unmake(sdr);
         return EXIT_FAILURE;
     }
-    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, channels, 10.0) !=0 ){
+    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, channels, 30.0) !=0 ){
         printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
     }
-    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, channels, -20.0) !=0 ){
-        printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
+    if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, channels, -40.0) !=0 ){
+        printf("setGain tx fail: %s\n", SoapySDRDevice_lastError());
     }
     SoapySDRStream *txStream = SoapySDRDevice_setupStream(sdr, SOAPY_SDR_TX, SOAPY_SDR_CS16, channels, channel_count, NULL);
     if (txStream == NULL)
@@ -86,8 +86,8 @@ int main(void)
     //заполнение tx_buff значениями сэмплов первые 16 бит - I, вторые 16 бит - Q.
     for (int i = 0; i < 2 * tx_mtu; i+=2)
     {
-        tx_buff[i] = 1500;
-        tx_buff[i+1] = 1500;
+        tx_buff[i] = 2000 ;
+        tx_buff[i+1] = 2000 ;
     }
 
     //prepare fixed bytes in transmit buffer
