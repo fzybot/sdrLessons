@@ -13,7 +13,7 @@ typedef struct sdr_config_s{
     int rx_sample_rate;
     int rx_carrier_freq;
     float rx_gain;
-    size_t *channels;
+    size_t channels[1] = {0} ;
 } sdr_config_t;
 
 struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config);
@@ -21,7 +21,7 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
 
 void close_pluto_sdr(struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream);
 
-void fill_txZ_buffer(int16_t *buffer, int size);
+void fill_test_tx_buffer(int16_t *buffer, int size);
 
 void receive_and_send_samples(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream, 
                                 int16_t *tx_buffer, int16_t *rx_buffer, int size, int num_iteration);

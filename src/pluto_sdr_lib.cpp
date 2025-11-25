@@ -29,7 +29,7 @@ struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config)
     if (sdr == NULL)
     {
         printf("SoapySDRDevice_make fail: %s\n", SoapySDRDevice_lastError());
-        return EXIT_FAILURE;
+        return NULL;
     }
 
     // Настраиваем устройства RX\TX
@@ -66,7 +66,7 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
         {
             printf("setupStream rx fail: %s\n", SoapySDRDevice_lastError());
             SoapySDRDevice_unmake(sdr);
-            return EXIT_FAILURE;
+            return NULL;
         }
         if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_RX, *config->channels, config->rx_gain) !=0 ){
             printf("setGain rx fail: %s\n", SoapySDRDevice_lastError());
@@ -86,7 +86,7 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
         {
             printf("setupStream tx fail: %s\n", SoapySDRDevice_lastError());
             SoapySDRDevice_unmake(sdr);
-            return EXIT_FAILURE;
+            return NULL;
         }
         if(SoapySDRDevice_setGain(sdr, SOAPY_SDR_TX, *config->channels, config->tx_gain) !=0 ){
             printf("setGain tx fail: %s\n", SoapySDRDevice_lastError());
@@ -99,7 +99,7 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
     return stream;
 }
 
-void fill_tx_buffer(int16_t *buffer, int size)
+void fill_test_tx_buffer(int16_t *buffer, int size)
 {
     printf("Filling TX buffer.\n");
     //заполнение tx_buff значениями сэмплов первые 16 бит - I, вторые 16 бит - Q.
