@@ -42,8 +42,6 @@ int main(void)
                              tx_buffer, rx_buffer, config.buffer_size,
                              10);
 
-    // plt::plot({1,3,2,4});
-    // plt::show();
     
     close_pluto_sdr(sdr, rxStream, txStream);
 
