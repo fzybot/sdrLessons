@@ -16,7 +16,7 @@ struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config)
     sprintf(buffer_size, "%d", config->buffer_size);
     SoapySDRKwargs_set(&args, "driver", "plutosdr");
     if (1) {
-        SoapySDRKwargs_set(&args, "uri", "usb:");
+        SoapySDRKwargs_set(&args, "uri", config->name);
     } else {
         SoapySDRKwargs_set(&args, "uri", "ip:192.168.2.1");
     }

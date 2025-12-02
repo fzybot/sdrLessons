@@ -13,10 +13,11 @@
 
 namespace plt = matplotlibcpp;
 
-int main(void)
+int main(int argc, char* argv[])
 {
     // Наши параметры SDR в одной структуре.
     sdr_config_t config;
+    config.name = argv[1];
     config.buffer_size = 1920;
     config.rx_carrier_freq = 800e6;
     config.tx_carrier_freq = 800e6;
@@ -24,6 +25,7 @@ int main(void)
     config.tx_sample_rate = 1e6;
     config.rx_gain = 30.0;
     config.tx_gain = -40.0;
+    std::cout << config.name << std::endl;
 
     // size_t channels[] = {0} ; // {0} or {0, 1}
     // config.channels = &channels;

@@ -6,6 +6,7 @@
 #include <complex.h>
 
 typedef struct sdr_config_s{
+    char *name;
     int buffer_size;
     int tx_sample_rate;
     int tx_carrier_freq;
