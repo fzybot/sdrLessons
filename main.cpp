@@ -40,9 +40,9 @@ int main(int argc, char* argv[])
     // TODO: здесь нужно отправлять и принимать сэмплы.
     fill_test_tx_buffer(tx_buffer, config.buffer_size);
 
-    receive_and_send_samples(sdr, rxStream, txStream,
-                             tx_buffer, rx_buffer, config.buffer_size,
-                             10);
+    start_rx_tx(sdr, rxStream, txStream,
+                        tx_buffer, rx_buffer, config.buffer_size,
+                        10);
 
     
     close_pluto_sdr(sdr, rxStream, txStream);

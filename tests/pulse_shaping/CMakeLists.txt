@@ -5,4 +5,5 @@ add_executable(
 target_link_libraries(test_pulse_shapes     
         ${PYTHON_LIBRARIES}
         Python3::NumPy
+        mylib
     )

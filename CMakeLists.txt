@@ -22,8 +22,9 @@ include_directories(SYSTEM ${matplotlib_SOURCE_DIR})
 # RF frontend driver
 find_package(SoapySDR REQUIRED)
 
-include_directories("include/")
+add_subdirectory(./lib)
 
+include_directories("include/")
 set(MAIN_SOURCE_FILES
     main.cpp
     src/pluto_sdr_lib.cpp
@@ -40,6 +41,7 @@ target_link_libraries(main
         ${SoapySDR_LIBRARIES}     
         ${PYTHON_LIBRARIES}
         Python3::NumPy
+        mylib
     )
 
 

@@ -4,6 +4,8 @@
 #include <stdlib.h> //free
 #include <stdint.h>
 #include <complex.h>
+#include <vector>
+#include <cstdint>
 
 #include "pluto_sdr_lib.h"
 
@@ -121,7 +123,7 @@ void fill_test_tx_buffer(int16_t *buffer, int size)
     }
 }
 
-void receive_and_send_samples(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream, 
+void start_rx_tx(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream, 
                                 int16_t *tx_buffer, int16_t *rx_buffer, int buff_size, int num_iteration)
 {
     printf("Starting recv and send samples.\n");
