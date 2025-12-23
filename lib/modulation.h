@@ -3,4 +3,6 @@
 #include <vector>
 
 // For PlutoSDR
-int bpsk(std::vector<bool> &in, std::vector<int16_t> *out, int size);
+void bpsk(std::vector<int> &in, std::vector<std::complex<double>> &out);
+
+std::vector<std::complex<double>> modulate(std::vector<int> &in, int modulation_order);

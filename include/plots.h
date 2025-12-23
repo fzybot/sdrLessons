@@ -5,10 +5,12 @@
 
 #include "matplotlibcpp.h"
 
-namespace plt = matplotlibcpp;
-using cd = std::complex<double>;
 
 void plot_vector(const std::vector<int> &y_vals,    std::string title, 
                                                     std::string x_lable,
-                                                    std::string y_lable);
+                                                    std::string y_lable, bool last);
 
+
+void plot_vector(const std::vector<std::complex<double>> &y_vals,   std::string title, 
+                                                                    std::string x_lable,
+                                                                    std::string y_lable, bool last);
