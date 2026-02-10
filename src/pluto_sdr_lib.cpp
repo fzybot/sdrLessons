@@ -130,7 +130,7 @@ void start_rx_tx(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySD
     const long  timeoutUs = 400000; // arbitrarily chosen (взяли из srsRAN)
     long long last_time = 0;
 
-    FILE *file = fopen("txdata.pcm", "w");
+    //FILE *file = fopen("txdata.pcm", "w");
 
     // Начинается работа с получением и отправкой сэмплов
     for (size_t buffers_read = 0; buffers_read < num_iteration; buffers_read++)
@@ -150,7 +150,7 @@ void start_rx_tx(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySD
 
         // Dump info
         printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
-        fwrite(rx_buffer, 2* buff_size * sizeof(int16_t), 1, file);
+        //fwrite(rx_buffer, 2* buff_size * sizeof(int16_t), 1, file);
         last_time = timeNs;
 
         // Переменная для времени отправки сэмплов относительно текущего приема
@@ -168,21 +168,79 @@ void start_rx_tx(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySD
 
         // Send buffer
         void *tx_buffs[] = {tx_buffer};
-        if( (buffers_read == 2) ){
-            printf("buffers_read: %d\n", buffers_read);
-            flags = SOAPY_SDR_HAS_TIME;
-            int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, buff_size, &flags, tx_time, timeoutUs);
-            if ((size_t)st != buff_size)
-            {
-                printf("TX Failed: %i\n", st);
-            }
-        }
+        // if( (buffers_read == 2) ){
+        //     printf("buffers_read: %d\n", buffers_read);
+        //     flags = SOAPY_SDR_HAS_TIME;
+        //     int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, buff_size, &flags, tx_time, timeoutUs);
+        //     if ((size_t)st != buff_size)
+        //     {
+        //         printf("TX Failed: %i\n", st);
+        //     }
+        // }
         
     }
-    fclose(file);
+    //fclose(file);
 
 }
 
+void run_sdr(sdr_global_t *sdr)
+{
+    printf("Starting recv and send samples.\n");
+    const long  timeoutUs = 400000; // arbitrarily chosen (взяли из srsRAN)
+    long long last_time = 0;
+
+    //FILE *file = fopen("txdata.pcm", "w");
+
+    // Начинается работа с получением и отправкой сэмплов
+    while (sdr->running)
+    {
+        void *rx_buffs[] = {sdr->phy.pluto_rx_buffer};
+        int flags;        // flags set by receive operation
+        long long timeNs; //timestamp for receive buffer
+
+        int sr = SoapySDRDevice_readStream(sdr->sdr, sdr->rxStream, rx_buffs, sdr->sdr_config.buffer_size, &flags, &timeNs, timeoutUs);
+        if (sr < 0)
+        {
+            printf("ERROR. SoapySDRDevice_readStream.\n");
+            continue;
+        }
+        
+
+        // Dump info
+        //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
+        for (int i = 0; i < BUFFER_SIZE; i++){
+            sdr->phy.raw_real[i] = sdr->phy.pluto_rx_buffer[i * 2];
+            sdr->phy.raw_imag[i] = sdr->phy.pluto_rx_buffer[i * 2 + 1];
+        }
+        last_time = timeNs;
+
+        // Переменная для времени отправки сэмплов относительно текущего приема
+        long long tx_time = timeNs + (4 * 1000 * 1000); // на 4 [мс] в будущее
+
+        // Добавляем время, когда нужно передать блок tx_buffer, через N -наносекунд
+        // for(size_t i = 0; i < 8; i++)
+        // {
+        //     // Extract byte from tx time
+        //     uint8_t tx_time_byte = (tx_time >> (i * 8)) & 0xff;
+
+        //     // Add byte to buffer
+        //     tx_buffer[2 + i] = tx_time_byte << 4;
+        // }
+
+        // Send buffer
+        // void *tx_buffs[] = {tx_buffer};
+        // if( (buffers_read == 2) ){
+        //     printf("buffers_read: %d\n", buffers_read);
+        //     flags = SOAPY_SDR_HAS_TIME;
+        //     int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, buff_size, &flags, tx_time, timeoutUs);
+        //     if ((size_t)st != buff_size)
+        //     {
+        //         printf("TX Failed: %i\n", st);
+        //     }
+        // }
+        
+    }
+}
 void close_pluto_sdr(SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream)
 {
     printf("Trying to close Pluto SDR\n");

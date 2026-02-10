@@ -1,4 +1,8 @@
+## Установка
 
+```bash
+git clone https://github.com/fzybot/sdrLessons.git
+```
 
 ### Запуск
 

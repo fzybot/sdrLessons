@@ -44,11 +44,11 @@
           - libavahi-client-dev
           # - nlohmann-json3-dev
         state: present
-        
-    - name: Update submodules
-      shell: |
-        git submodule update --init --recursive
-        git submodule update --remote --recursive
+
+    # - name: Update submodules
+    #   shell: |
+    #     git submodule update --init --recursive
+    #     git submodule update --remote --recursive
         
     - name: Compile, and install SoapySDR
       shell: |
