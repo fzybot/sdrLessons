@@ -2,6 +2,7 @@
 
 ```bash
 git clone https://github.com/fzybot/sdrLessons.git
+git submodule update --init --recursive
 ```
 
 ### Запуск
