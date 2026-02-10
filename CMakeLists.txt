@@ -26,7 +26,7 @@ add_subdirectory(./lib)
 
 include_directories("include/")
 set(MAIN_SOURCE_FILES
-    main.cpp
+    src/main.cpp
     src/pluto_sdr_lib.cpp
     src/plots.cpp
 )
@@ -37,11 +37,6 @@ add_subdirectory(./tests)
 # Добавляем исполняемый файл
 add_executable(main ${MAIN_SOURCE_FILES})
 
-target_link_libraries(main 
-        ${SoapySDR_LIBRARIES}     
-        ${PYTHON_LIBRARIES}
-        Python3::NumPy
-        mylib
-    )
+target_link_libraries(main  ${SoapySDR_LIBRARIES} ${PYTHON_LIBRARIES} Python3::NumPy mylib)
 
 
