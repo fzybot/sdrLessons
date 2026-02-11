@@ -123,66 +123,6 @@ void fill_test_tx_buffer(int16_t *buffer, int size)
     }
 }
 
-void start_rx_tx(  struct SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream, 
-                                int16_t *tx_buffer, int16_t *rx_buffer, int buff_size, int num_iteration)
-{
-    printf("Starting recv and send samples.\n");
-    const long  timeoutUs = 400000; // arbitrarily chosen (взяли из srsRAN)
-    long long last_time = 0;
-
-    //FILE *file = fopen("txdata.pcm", "w");
-
-    // Начинается работа с получением и отправкой сэмплов
-    for (size_t buffers_read = 0; buffers_read < num_iteration; buffers_read++)
-    {
-        printf("1.\n");
-        void *rx_buffs[] = {rx_buffer};
-        int flags;        // flags set by receive operation
-        long long timeNs; //timestamp for receive buffer
-
-        int sr = SoapySDRDevice_readStream(sdr, rxStream, rx_buffs, buff_size, &flags, &timeNs, timeoutUs);
-        if (sr < 0)
-        {
-            printf("ERROR. SoapySDRDevice_readStream.\n");
-            continue;
-        }
-        
-
-        // Dump info
-        printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
-        //fwrite(rx_buffer, 2* buff_size * sizeof(int16_t), 1, file);
-        last_time = timeNs;
-
-        // Переменная для времени отправки сэмплов относительно текущего приема
-        long long tx_time = timeNs + (4 * 1000 * 1000); // на 4 [мс] в будущее
-
-        // Добавляем время, когда нужно передать блок tx_buffer, через N -наносекунд
-        for(size_t i = 0; i < 8; i++)
-        {
-            // Extract byte from tx time
-            uint8_t tx_time_byte = (tx_time >> (i * 8)) & 0xff;
-
-            // Add byte to buffer
-            tx_buffer[2 + i] = tx_time_byte << 4;
-        }
-
-        // Send buffer
-        void *tx_buffs[] = {tx_buffer};
-        // if( (buffers_read == 2) ){
-        //     printf("buffers_read: %d\n", buffers_read);
-        //     flags = SOAPY_SDR_HAS_TIME;
-        //     int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, buff_size, &flags, tx_time, timeoutUs);
-        //     if ((size_t)st != buff_size)
-        //     {
-        //         printf("TX Failed: %i\n", st);
-        //     }
-        // }
-        
-    }
-    //fclose(file);
-
-}
-
 void run_sdr(sdr_global_t *sdr)
 {
     printf("Starting recv and send samples.\n");
@@ -212,6 +152,7 @@ void run_sdr(sdr_global_t *sdr)
             sdr->phy.raw_real[i] = sdr->phy.pluto_rx_buffer[i * 2];
             sdr->phy.raw_imag[i] = sdr->phy.pluto_rx_buffer[i * 2 + 1];
         }
+        sdr->phy.rx_timeNs = timeNs;
         last_time = timeNs;
 
         // Переменная для времени отправки сэмплов относительно текущего приема
@@ -240,21 +181,22 @@ void run_sdr(sdr_global_t *sdr)
         // }
         
     }
+    close_pluto_sdr(sdr);
 }
-void close_pluto_sdr(SoapySDRDevice *sdr, SoapySDRStream *rxStream, SoapySDRStream *txStream)
+void close_pluto_sdr(sdr_global_t *sdr)
 {
     printf("Trying to close Pluto SDR\n");
         //stop streaming
-    if(sdr || rxStream || txStream){
-        SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0);
-        SoapySDRDevice_deactivateStream(sdr, txStream, 0, 0);
+    if(sdr->sdr || sdr->rxStream || sdr->txStream){
+        SoapySDRDevice_deactivateStream(sdr->sdr, sdr->rxStream, 0, 0);
+        SoapySDRDevice_deactivateStream(sdr->sdr, sdr->txStream, 0, 0);
 
         //shutdown the stream
-        SoapySDRDevice_closeStream(sdr, rxStream);
-        SoapySDRDevice_closeStream(sdr, txStream);
+        SoapySDRDevice_closeStream(sdr->sdr, sdr->rxStream);
+        SoapySDRDevice_closeStream(sdr->sdr, sdr->txStream);
 
         //cleanup device handle
-        SoapySDRDevice_unmake(sdr);
+        SoapySDRDevice_unmake(sdr->sdr);
     }
 
     printf("Pluto SDR is closed. Streams are deactivated.\n");

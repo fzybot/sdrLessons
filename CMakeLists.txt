@@ -43,7 +43,11 @@ target_link_libraries(implot PRIVATE imgui)
 target_compile_options(implot PRIVATE -fPIC)
 
 
-add_executable(main ${SRC_DIR}/main.cpp ${SRC_DIR}/pluto_sdr_lib.cpp)
+set(SOURCES ${SRC_DIR}/main.cpp
+            ${SRC_DIR}/pluto_sdr_lib.cpp
+            ${SRC_DIR}/ui/pluto_ui.cpp)
+
+add_executable(main ${SOURCES})
 target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES})
 
 
