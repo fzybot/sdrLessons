@@ -56,6 +56,10 @@ void run_gui(sdr_global_t *sdr)
             ImGui::Text("Window size equal to: %f x %f", win_size.x, win_size.y);
             if(ImPlot::BeginPlot("I/Q", win_size))
             {
+                ImPlot::SetupAxes("I","Q");
+                ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0);
+                ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0);
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
                 ImPlot::PlotScatter("Samples", sdr->phy.raw_real, sdr->phy.raw_imag, BUFFER_SIZE);
                 ImPlot::EndPlot();
             }
