@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <complex.h>
 #include <vector>
+#include <iostream>
 #include <cstdint>
 
 #include "pluto_sdr_lib.h"
@@ -147,10 +148,9 @@ void run_sdr(sdr_global_t *sdr)
         
 
         // Dump info
-        //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", buffers_read, sr, flags, timeNs, timeNs - last_time);
+        //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
         for (int i = 0; i < BUFFER_SIZE; i++){
-            sdr->phy.raw_real[i] = sdr->phy.pluto_rx_buffer[i * 2];
-            sdr->phy.raw_imag[i] = sdr->phy.pluto_rx_buffer[i * 2 + 1];
+            sdr->phy.raw_samples[i] = std::complex(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
         }
         sdr->phy.rx_timeNs = timeNs;
         last_time = timeNs;

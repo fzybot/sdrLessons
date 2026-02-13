@@ -8,9 +8,7 @@
 #include <complex.h>
 #include <vector>
 
-
-#define BUFFER_SIZE 1920
-
+#define BUFFER_SIZE 1920 * 10
 
 typedef struct sdr_config_s{
     char *name; // usb or ip adress
@@ -29,9 +27,7 @@ typedef struct sdr_phy_s{
     long long rx_timeNs;
     int16_t pluto_rx_buffer[2 * BUFFER_SIZE];
     int16_t pluto_tx_buffer[2 * BUFFER_SIZE];
-    float raw_real[BUFFER_SIZE];
-    float raw_imag[BUFFER_SIZE];
-    int num_samples;
+    std::vector< std::complex<float> > raw_samples;
 } sdr_phy_t;
 
 // Инициализация
@@ -50,8 +46,6 @@ struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config);
 struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *config, bool isRx);
 
 void close_pluto_sdr(sdr_global_t *sdr);
-
-
 
 // Работа с буфферами
 void fill_test_tx_buffer(int16_t *buffer, int size);

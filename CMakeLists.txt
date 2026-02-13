@@ -42,12 +42,14 @@ target_include_directories(implot PUBLIC ${THIRD_PARTY_DIR}/implot)
 target_link_libraries(implot PRIVATE imgui)
 target_compile_options(implot PRIVATE -fPIC)
 
+# Добавляем директорию lib с нашими функциями обработки сигнала
+add_subdirectory(./lib)
 
 set(SOURCES ${SRC_DIR}/main.cpp
             ${SRC_DIR}/pluto_sdr_lib.cpp
             ${SRC_DIR}/ui/pluto_ui.cpp)
 
 add_executable(main ${SOURCES})
-target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES})
+target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES} mylib)
 
 

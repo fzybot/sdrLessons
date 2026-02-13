@@ -53,14 +53,22 @@ void run_gui(sdr_global_t *sdr)
             ImVec2 win_size = ImGui::GetWindowSize();
             win_size.y -= 50;
             win_size.x -= 50;
-            ImGui::Text("Window size equal to: %f x %f", win_size.x, win_size.y);
-            if(ImPlot::BeginPlot("I/Q", win_size))
-            {
+            if (!sdr->phy.raw_samples.empty()) {
+                ImPlot::BeginPlot("##ConstellationPlot", win_size);
                 ImPlot::SetupAxes("I","Q");
-                ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0);
-                ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0);
+                ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+                ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
-                ImPlot::PlotScatter("Samples", sdr->phy.raw_real, sdr->phy.raw_imag, BUFFER_SIZE);
+                ImPlot::PlotScatterG(
+                    "Signal",
+                    [](int idx, void* data) {
+                        auto& vec =
+                            *static_cast<std::vector<std::complex<float>>*>(
+                                data);
+                        return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                    },
+                    &sdr->phy.raw_samples,
+                    sdr->phy.raw_samples.size());
                 ImPlot::EndPlot();
             }
         

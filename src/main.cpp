@@ -35,9 +35,9 @@ int main(int argc, char* argv[])
     my_sdr.sdr_config.tx_sample_rate = 1e6;
     my_sdr.sdr_config.rx_gain = 60.0;
     my_sdr.sdr_config.tx_gain = -40.0;
-
-    // size_t channels[] = {0} ; // {0} or {0, 1}
-    // config.channels = &channels;
+    my_sdr.sdr_config.buffer_size = BUFFER_SIZE;
+    my_sdr.phy.raw_samples.resize(my_sdr.sdr_config.buffer_size);
+    std::cout << "vector size = " << my_sdr.phy.raw_samples.size() << std::endl;
 
     my_sdr.sdr = setup_pluto_sdr(&my_sdr.sdr_config);
     my_sdr.rxStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 1);
@@ -49,9 +49,6 @@ int main(int argc, char* argv[])
 
     gui_thread.join();
     sdr_thread.join();
-
-    
-    // close_pluto_sdr(sdr, my_sdr->rxStream, my_sdr->txStream);
 
     return EXIT_SUCCESS;
 }

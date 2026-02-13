@@ -26,8 +26,8 @@ std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a,
         double summ_imag = 0.0;
         for (int m = 0; m < b.size(); m++)
         {
-            summ_real += a[i*m].real() * b[j - m];
-            summ_imag += a[i*m].imag() * b[j - m];
+            summ_real += a[i*m].real() * b[i - m];
+            summ_imag += a[i*m].imag() * b[i - m];
         }
         std::complex<double> complex_num(summ_real, summ_imag);
 
