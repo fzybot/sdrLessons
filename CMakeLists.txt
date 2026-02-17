@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/thirdparty)
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(INCLUDE_LIB_DIR ${PROJECT_SOURCE_DIR}/lib)
 set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/examples)
 
 # RF frontend driver
@@ -18,8 +19,8 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
 include_directories(${INCLUDE_DIR})
-
 include_directories(${INCLUDE_DIR}/ui)
+include_directories(${INCLUDE_LIB_DIR})
 
 # ImGui
 add_library(imgui STATIC
@@ -49,7 +50,11 @@ add_subdirectory(./lib)
 
 set(SOURCES ${SRC_DIR}/main.cpp
             ${SRC_DIR}/pluto_sdr_lib.cpp
-            ${SRC_DIR}/ui/pluto_ui.cpp)
+            ${SRC_DIR}/ui/pluto_ui.cpp
+            ${INCLUDE_LIB_DIR}/bit_generation.cpp
+            ${INCLUDE_LIB_DIR}/math_operations.cpp
+            ${INCLUDE_LIB_DIR}/modulation.cpp
+            ${INCLUDE_LIB_DIR}/pulse_shaping.cpp)
 
 add_executable(main ${SOURCES})
 target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES} mylib)

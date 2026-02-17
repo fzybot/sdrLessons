@@ -1,3 +1,7 @@
+#include <vector>
+#include <iostream>
+#include <numeric>
+
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include "backends/imgui_impl_opengl3.h"
@@ -6,6 +10,10 @@
 #include "implot.h"
 #include "imgui_internal.h"
 
+#include "bit_generation.h"
+#include "pulse_shaping.h"
+#include "modulation.h"
+#include "math_operations.h"
 #include "pluto_sdr_lib.h"
 #include "pluto_ui.h"
 
@@ -65,7 +73,8 @@ void run_gui(sdr_global_t *sdr)
             ImGui::DockBuilderFinish(dockspace_id);
         }
         ImGui::DockSpaceOverViewport(dockspace_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
-        
+
+        show_global_menu_bar(sdr);
         show_properties_window(sdr);
         show_main_window(sdr);
         
@@ -86,6 +95,19 @@ void run_gui(sdr_global_t *sdr)
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
+
+
+void show_global_menu_bar(sdr_global_t *sdr)
+{
+    if(ImGui::BeginMainMenuBar()){
+        if (ImGui::BeginMenu("File"))
+        {
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
 
 void show_properties_window(sdr_global_t *sdr)
 {
@@ -109,10 +131,7 @@ void show_main_window(sdr_global_t *sdr)
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Tests")) {
-            // DemoHeader("Sizing", Demo_SubplotsSizing);
-            // DemoHeader("Item Sharing", Demo_SubplotItemSharing);
-            // DemoHeader("Axis Linking", Demo_SubplotAxisLinking);
-            // DemoHeader("Tables", Demo_Tables);
+            show_test_sdr_set(sdr);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -150,4 +169,95 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<float> > 
     
         //ImGui::End();
     }
+}
+enum class pulse_shaping_filter;
+
+void show_test_sdr_set(sdr_global_t *sdr)
+{
+    // 1. Генерация случайного набора бит
+    int N = 10;
+    int symb_size = 10;
+    std::vector<int> xAxis(N);                              // Значения оси Х для графиков
+    std::vector<int> xAxis_upsampled(N * symb_size);        // Значения для оси Х для графиков после upsampling
+    std::iota(xAxis.begin(), xAxis.end(), 0);
+    std::iota(xAxis_upsampled.begin(), xAxis_upsampled.end(), 0);
+
+    std::vector<int> bit_array = {0, 1, 1, 0, 0, 1, 1, 1, 0, 1};
+
+    // 2. Модуляция\манипуляция BPSK\QPSK\N_QAM и др
+    std::vector<std::complex<float>> modulated_array = modulate(bit_array, 1);
+
+    // 3. Формирование Символов (upsampling)
+    std::vector<std::complex<float>> upsampled_bit_array = upsample(modulated_array, symb_size);
+
+    // 4. Pulse shaping (формирующий фильтр matched filter)
+    std::vector<std::complex<float>> pulse_shaped = pulse_shaping(upsampled_bit_array, 0, symb_size);
+
+    // 5. Channel
+    std::vector<std::complex<float>> channel_samples;
+
+    // 5. Matched filter
+    std::vector<std::complex<float>> matched_samples;
+
+
+    static int rows = 4;
+    static int cols = 1;
+    static int plot_size = 10;
+    static float rratios[] = {10, 10, 10, 10, 1, 1};
+    static float cratios[] = {10, 10, 10, 10,1,1};
+    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems|ImPlotSubplotFlags_NoLegend;
+    if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1,400), flags, rratios, cratios)) {
+
+        ImPlot::BeginPlot("1. Generate bit array", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatter("Mouse Y", xAxis.data(), bit_array.data(), N, 0);
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].real());
+                },
+                &modulated_array,
+                modulated_array.size());
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].imag());
+                },
+                &modulated_array,
+                modulated_array.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("3. Upsampling", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].real());
+                },
+                &upsampled_bit_array,
+                upsampled_bit_array.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("4. Pulse shaping", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].real());
+                },
+                &pulse_shaped,
+                pulse_shaped.size());
+        ImPlot::EndPlot();
+
+        ImPlot::EndSubplots();
+    }
+
 }

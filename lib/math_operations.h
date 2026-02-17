@@ -1,6 +1,6 @@
 #include <vector>
 #include <complex.h>
 
-std::vector<double> convolve(std::vector<double> &a, std::vector<double> &b);
+std::vector<float> convolve(std::vector<float> &a, std::vector<float> &b);
 
-std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a, std::vector<double> &b);
+std::vector<std::complex<float>> convolve(std::vector<std::complex<float>> &a, std::vector<float> &b);
