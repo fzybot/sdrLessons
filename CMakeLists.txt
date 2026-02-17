@@ -19,6 +19,8 @@ find_package(GLEW REQUIRED)
 
 include_directories(${INCLUDE_DIR})
 
+include_directories(${INCLUDE_DIR}/ui)
+
 # ImGui
 add_library(imgui STATIC
     ${THIRD_PARTY_DIR}/imgui/imgui.cpp
