@@ -38,22 +38,44 @@ std::vector<std::complex<float>> convolve(std::vector<std::complex<float>> &a, s
             }
         }
     }
-    // for (int i = 0; i < a.size(); i += 1){
-    //     float summ_real = 0.0;
-    //     float summ_imag = 0.0;
-    //     for (int m = 0; m < b.size(); m++)
-    //     {
-    //         summ_real += a[i*m].real() * b[i - m];
-    //         summ_imag += a[i*m].imag() * b[i - m];
-    //     }
-    //     std::complex<float> complex_num(summ_real, summ_imag);
-
-    //     result.push_back(complex_num);
-    // }
-
     return result;
 }
 
+std::vector<float> ted(std::vector<std::complex<float>> &matched, int samples_per_symbol)
+{
+    int K1, K2, p1, p2 = 0;
+    int BnTs = 0.01;
+    int Kp = 0.002;
+    float zeta = sqrt(2) / 2;
+    float theta = (BnTs / samples_per_symbol) / (zeta + (0.25 / zeta));
+    K1 = -4 * zeta * theta / ( (1 + 2 * zeta * theta + pow(theta,2)) * Kp);
+    K2 = -4 * pow(theta,2) / ( (1 + 2 * zeta * theta + pow(theta,2))* Kp);
+    int tau = 0;
+    float err;
+    std::vector<float> errof;
+
+
+    for (int i = 0; i < matched.size() - samples_per_symbol; i+=samples_per_symbol)
+    {
+        err = (matched[i + samples_per_symbol + tau].real() - matched[i + tau]).real() * matched[i + (samples_per_symbol / 2) + tau].real() + (matched[i + samples_per_symbol + tau].imag() - matched[i + tau]).imag() * matched[i + (samples_per_symbol / 2) + tau].imag(); 
+        p1 = err * K1;
+        p2 =  p2 + p1 + err * K2;
+
+        if (p2 > 1)
+        {
+            p2 = p2 - 1;
+        }
+
+        if (p2 < -1)
+        {
+            p2 = p2 + 1;
+        }
+        tau = ceil(p2 * samples_per_symbol);
+        errof.push_back(i + samples_per_symbol + tau);
+
+    }
+    return errof;
+}
 // int main()
 // {
 //     std::cout<<"Hello World" << std::endl;

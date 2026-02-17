@@ -197,14 +197,19 @@ void show_test_sdr_set(sdr_global_t *sdr)
     std::vector<std::complex<float>> channel_samples;
 
     // 5. Matched filter
-    std::vector<std::complex<float>> matched_samples;
+    std::vector<std::complex<float>> matched_samples = pulse_shaping(pulse_shaped, 0, symb_size);
 
+    std::vector<float> ted_samples = ted(matched_samples, symb_size);
+    for (int i = 0; i < ted_samples.size(); i++){
+        std::cout << ted_samples[i] << " ";
+    }
+    std::cout << " " << std::endl;
 
     static int rows = 4;
     static int cols = 1;
     static int plot_size = 10;
-    static float rratios[] = {10, 10, 10, 10, 1, 1};
-    static float cratios[] = {10, 10, 10, 10,1,1};
+    static float rratios[] = {10, 10, 10, 10, 10, 1};
+    static float cratios[] = {10, 10, 10, 10,10,1};
     static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems|ImPlotSubplotFlags_NoLegend;
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1,400), flags, rratios, cratios)) {
 
@@ -255,6 +260,18 @@ void show_test_sdr_set(sdr_global_t *sdr)
                 },
                 &pulse_shaped,
                 pulse_shaped.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("6. TED", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<float>*>(data);
+                    return ImPlotPoint(idx, vec[idx]);
+                },
+                &ted_samples,
+                ted_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
