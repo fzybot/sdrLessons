@@ -22,6 +22,11 @@ std::vector<std::complex<float>> pulse_shaping(std::vector<std::complex<float>> 
     switch(type){
         case 0:
             std::vector<float> filter(sps, 1.0);
+            for (int i = 0; i < filter.size(); i ++)
+            {
+                std::cout << filter[i] << " ";
+            }
+            std::cout << std::endl;
             iq_samples = convolve(vec, filter);
             break;
     }

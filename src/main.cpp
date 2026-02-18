@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     my_sdr.rxStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 1);
     my_sdr.txStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 0);
 
-
+    calculate_test_set(&my_sdr);
     std::thread gui_thread(run_gui, &my_sdr);
     std::thread sdr_thread(run_sdr, &my_sdr);
 

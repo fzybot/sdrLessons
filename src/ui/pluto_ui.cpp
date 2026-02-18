@@ -170,52 +170,26 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<float> > 
         //ImGui::End();
     }
 }
-enum class pulse_shaping_filter;
 
 void show_test_sdr_set(sdr_global_t *sdr)
 {
-    // 1. Генерация случайного набора бит
-    int N = 10;
-    int symb_size = 10;
-    std::vector<int> xAxis(N);                              // Значения оси Х для графиков
-    std::vector<int> xAxis_upsampled(N * symb_size);        // Значения для оси Х для графиков после upsampling
-    std::iota(xAxis.begin(), xAxis.end(), 0);
-    std::iota(xAxis_upsampled.begin(), xAxis_upsampled.end(), 0);
-
-    std::vector<int> bit_array = {0, 1, 1, 0, 0, 1, 1, 1, 0, 1};
-
-    // 2. Модуляция\манипуляция BPSK\QPSK\N_QAM и др
-    std::vector<std::complex<float>> modulated_array = modulate(bit_array, 1);
-
-    // 3. Формирование Символов (upsampling)
-    std::vector<std::complex<float>> upsampled_bit_array = upsample(modulated_array, symb_size);
-
-    // 4. Pulse shaping (формирующий фильтр matched filter)
-    std::vector<std::complex<float>> pulse_shaped = pulse_shaping(upsampled_bit_array, 0, symb_size);
-
-    // 5. Channel
-    std::vector<std::complex<float>> channel_samples;
-
-    // 5. Matched filter
-    std::vector<std::complex<float>> matched_samples = pulse_shaping(pulse_shaped, 0, symb_size);
-
-    std::vector<float> ted_samples = ted(matched_samples, symb_size);
-    for (int i = 0; i < ted_samples.size(); i++){
-        std::cout << ted_samples[i] << " ";
-    }
-    std::cout << " " << std::endl;
-
-    static int rows = 4;
+    static int rows = 5;
     static int cols = 1;
     static int plot_size = 10;
-    static float rratios[] = {10, 10, 10, 10, 10, 1};
-    static float cratios[] = {10, 10, 10, 10,10,1};
-    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems|ImPlotSubplotFlags_NoLegend;
-    if (ImPlot::BeginSubplots("My Subplots", rows, cols, ImVec2(-1,400), flags, rratios, cratios)) {
+    static float rratios[] = {5, 5, 5, 5, 5, 1};
+    static float cratios[] = {5, 5, 5, 5, 5, 1};
+    ImVec2 win_size = ImGui::GetWindowSize();
+    win_size.y -= 50;
+    win_size.x -= 50;
+    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems | ImPlotSubplotFlags_NoLegend;
+    ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkRows", (unsigned int*)&flags, ImPlotSubplotFlags_LinkRows);
+    ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkCols", (unsigned int*)&flags, ImPlotSubplotFlags_LinkCols);
+    if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
         ImPlot::BeginPlot("1. Generate bit array", ImVec2(), ImPlotFlags_NoLegend);
         ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::PlotScatter("Mouse Y", xAxis.data(), bit_array.data(), N, 0);
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+        ImPlot::PlotStems("Mouse Y", sdr->test_set.xAxis.data(), sdr->test_set.bit_array.data(), sdr->test_set.N, 0);
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
@@ -226,16 +200,16 @@ void show_test_sdr_set(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
                 },
-                &modulated_array,
-                modulated_array.size());
+                &sdr->test_set.modulated_array,
+                sdr->test_set.modulated_array.size());
         ImPlot::PlotScatterG(
                 "Signal",
                 [](int idx, void* data) {
                     auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
                     return ImPlotPoint(idx, vec[idx].imag());
                 },
-                &modulated_array,
-                modulated_array.size());
+                &sdr->test_set.modulated_array,
+                sdr->test_set.modulated_array.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("3. Upsampling", ImVec2(), ImPlotFlags_NoLegend);
@@ -246,8 +220,8 @@ void show_test_sdr_set(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
                 },
-                &upsampled_bit_array,
-                upsampled_bit_array.size());
+                &sdr->test_set.upsampled_bit_array,
+                sdr->test_set.upsampled_bit_array.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("4. Pulse shaping", ImVec2(), ImPlotFlags_NoLegend);
@@ -258,20 +232,30 @@ void show_test_sdr_set(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
                 },
-                &pulse_shaped,
-                pulse_shaped.size());
+                &sdr->test_set.pulse_shaped,
+                sdr->test_set.pulse_shaped.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("6. TED", ImVec2(), ImPlotFlags_NoLegend);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::PlotScatterG(
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -11.0, 11.0);
+        ImPlot::PlotLineG(
                 "Signal",
                 [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<float>*>(data);
-                    return ImPlotPoint(idx, vec[idx]);
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].real());
                 },
-                &ted_samples,
-                ted_samples.size());
+                &sdr->test_set.matched_samples,
+                sdr->test_set.matched_samples.size());
+        ImPlot::PlotLineG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].imag());
+                },
+                &sdr->test_set.matched_samples,
+                sdr->test_set.matched_samples.size());
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+        ImPlot::PlotStems("Stems 2", sdr->test_set.xAxis_upsampled.data(), sdr->test_set.ted_indexes.data(),sdr->test_set.ted_indexes.size());
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
