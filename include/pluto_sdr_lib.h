@@ -8,7 +8,7 @@
 #include <complex.h>
 #include <vector>
 
-#define BUFFER_SIZE 1920 * 10
+#define BUFFER_SIZE 1920
 
 typedef struct sdr_config_s{
     char *name; // usb or ip adress
@@ -24,10 +24,14 @@ typedef struct sdr_config_s{
 } sdr_config_t;
 
 typedef struct sdr_phy_s{
+    int Nsps = 10;
     long long rx_timeNs;
     int16_t pluto_rx_buffer[2 * BUFFER_SIZE];
     int16_t pluto_tx_buffer[2 * BUFFER_SIZE];
     std::vector< std::complex<double> > raw_samples;
+    std::vector< std::complex<double> > matched_samples;
+    std::vector< std::complex<double> > symb_sync_samples;
+    std::vector< std::complex<double> > costas_sync_samples;
 } sdr_phy_t;
 
 typedef struct test_set_s{
@@ -44,7 +48,9 @@ typedef struct test_set_s{
     std::vector<std::complex<double>> pulse_shaped;
     std::vector<std::complex<double>> channel_samples;
     std::vector<std::complex<double>> matched_samples;
-    std::vector<int> ted_samples;
+    std::vector<std::complex<double>> ted_samples;
+    std::vector<std::complex<double>> costas_samples;
+    std::vector<int> ted_err_idx;
     std::vector<int> ted_indexes; 
 } test_set_t;
 

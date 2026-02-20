@@ -26,9 +26,7 @@ std::vector<std::complex<double>> pulse_shaping(std::vector<std::complex<double>
             for (int i = 0; i < filter.size(); i++)
             {
                 filter[i] = 1.0;
-                std::cout << filter[i] << " ";
             }
-            std::cout << std::endl;
             iq_samples = convolve(vec, filter);
             break;
     }

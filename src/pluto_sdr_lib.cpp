@@ -113,13 +113,28 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
 
 void fill_test_tx_buffer(int16_t *buffer, int size)
 {
-    printf("Filling TX buffer.\n");
-    //заполнение tx_buff значениями сэмплов первые 16 бит - I, вторые 16 бит - Q.
+    int Nsps = 10;
+    std::vector<int> bit_array = generate_bit_array(size/Nsps*2);
+    std::vector<std::complex<double>> modulated_array = modulate(bit_array, 2);
+    std::vector<std::complex<double>> upsampled_bit_array = upsample(modulated_array, Nsps);
+    std::vector<std::complex<double>> pulse_shaped = pulse_shaping(upsampled_bit_array, 0, Nsps);
+    std::cout << "bit_array size = " << bit_array.size() << std::endl;
+    std::cout << "modulated_array size = " << modulated_array.size() << std::endl;
+    std::cout << "upsampled_bit_array size = " << upsampled_bit_array.size() << std::endl;
+    std::cout << "pulse_shaped size = " << pulse_shaped.size() << std::endl;
+    // заполнение tx_buff значениями сэмплов первые 16 бит - I, вторые 16 бит - Q.
+    // for (int i = 0; i < pulse_shaped.size(); i++)
+    // {
+    //     std::cout << pulse_shaped[i] << " ";
+    // }
+    // std::cout << std::endl;
     for (int i = 0; i < 2 * size; i+=2)
     {
-        buffer[i] = 2000 << 4;
-        buffer[i + 1] = 2000 << 4;
+        buffer[i] = int(pulse_shaped[i].real() * 2000) << 4;
+        buffer[i + 1] = int(pulse_shaped[i].imag() * 2000) << 4;
+        //std::cout << buffer[i] << " " << buffer[i+1] << " ";
     }
+    std::cout << std::endl;
 
     //prepare fixed bytes in transmit buffer
     //we transmit a pattern of FFFF FFFF [TS_0]00 [TS_1]00 [TS_2]00 [TS_3]00 [TS_4]00 [TS_5]00 [TS_6]00 [TS_7]00 FFFF FFFF
@@ -142,6 +157,7 @@ void run_sdr(sdr_global_t *sdr)
         //FILE *file = fopen("txdata.pcm", "w");
 
         // Начинается работа с получением и отправкой сэмплов
+        int buffers_read = 0;
         while (sdr->running)
         {
             void *rx_buffs[] = {sdr->phy.pluto_rx_buffer};
@@ -155,40 +171,42 @@ void run_sdr(sdr_global_t *sdr)
                 continue;
             }
             
-
             // Dump info
             //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
             for (int i = 0; i < BUFFER_SIZE; i++){
                 sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
             }
+            sdr->phy.matched_samples =  pulse_shaping(sdr->phy.raw_samples, 0, sdr->phy.Nsps);
+            sdr->phy.symb_sync_samples = symbol_sync(sdr->phy.matched_samples, sdr->phy.Nsps);
+            sdr->phy.costas_sync_samples = costas_loop(sdr->phy.symb_sync_samples);
             sdr->phy.rx_timeNs = timeNs;
             last_time = timeNs;
 
             // Переменная для времени отправки сэмплов относительно текущего приема
             long long tx_time = timeNs + (4 * 1000 * 1000); // на 4 [мс] в будущее
 
+
+            void *tx_buffs[] = {sdr->phy.pluto_tx_buffer};
             // Добавляем время, когда нужно передать блок tx_buffer, через N -наносекунд
-            // for(size_t i = 0; i < 8; i++)
-            // {
-            //     // Extract byte from tx time
-            //     uint8_t tx_time_byte = (tx_time >> (i * 8)) & 0xff;
+            for(size_t i = 0; i < 8; i++)
+            {
+                // Extract byte from tx time
+                uint8_t tx_time_byte = (tx_time >> (i * 8)) & 0xff;
 
-            //     // Add byte to buffer
-            //     tx_buffer[2 + i] = tx_time_byte << 4;
-            // }
+                // Add byte to buffer
+                sdr->phy.pluto_tx_buffer[2 + i] = tx_time_byte << 4;
+            }
 
-            // Send buffer
-            // void *tx_buffs[] = {tx_buffer};
-            // if( (buffers_read == 2) ){
-            //     printf("buffers_read: %d\n", buffers_read);
-            //     flags = SOAPY_SDR_HAS_TIME;
-            //     int st = SoapySDRDevice_writeStream(sdr, txStream, (const void * const*)tx_buffs, buff_size, &flags, tx_time, timeoutUs);
-            //     if ((size_t)st != buff_size)
-            //     {
-            //         printf("TX Failed: %i\n", st);
-            //     }
-            // }
-            
+            if( (buffers_read % 10 == 0) ){
+                //printf("buffers_read: %d\n", buffers_read);
+                flags = SOAPY_SDR_HAS_TIME;
+                int st = SoapySDRDevice_writeStream(sdr->sdr, sdr->txStream, (const void * const*)tx_buffs, sdr->sdr_config.buffer_size, &flags, tx_time, timeoutUs);
+                if ((size_t)st != sdr->sdr_config.buffer_size)
+                {
+                    printf("TX Failed: %i\n", st);
+                }
+            }
+            buffers_read++;
         }
         close_pluto_sdr(sdr);
     }
@@ -231,15 +249,26 @@ void calculate_test_set(sdr_global_t *sdr)
     std::cout << "" << std::endl;
 
     std::cout << "6. TED" << std::endl;
-    sdr->test_set.ted_samples = ted(sdr->test_set.matched_samples, sdr->test_set.symb_size);
-    sdr->test_set.ted_indexes.resize(sdr->test_set.N * sdr->test_set.symb_size); 
+    // sdr->test_set.ted_err_idx = ted(sdr->test_set.matched_samples, sdr->test_set.symb_size);
+    sdr->test_set.ted_samples = symbol_sync(sdr->test_set.matched_samples, sdr->test_set.symb_size);
+    sdr->test_set.ted_indexes.resize(sdr->test_set.N * sdr->test_set.symb_size);
+    for (int i = 0; i < sdr->test_set.ted_err_idx.size(); i++){
+        sdr->test_set.ted_indexes[sdr->test_set.ted_err_idx[i]] = 10;
+        std::cout << sdr->test_set.ted_err_idx[i] << " ";
+    }
+    std::cout << "" << std::endl;
     for (int i = 0; i < sdr->test_set.ted_samples.size(); i++){
-        sdr->test_set.ted_indexes[sdr->test_set.ted_samples[i]] = 10;
         std::cout << sdr->test_set.ted_samples[i] << " ";
     }
     std::cout << "" << std::endl;
-}
 
+    std::cout << "6. Costas Loop" << std::endl;
+    sdr->test_set.costas_samples = costas_loop(sdr->test_set.ted_samples);
+    for (int i = 0; i < sdr->test_set.costas_samples.size(); i++){
+        std::cout << sdr->test_set.costas_samples[i] << " ";
+    }
+    std::cout << "" << std::endl;
+}
 
 void close_pluto_sdr(sdr_global_t *sdr)
 {

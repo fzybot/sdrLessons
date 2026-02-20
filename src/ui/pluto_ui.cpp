@@ -22,7 +22,7 @@ void run_gui(sdr_global_t *sdr)
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     SDL_Window* window = SDL_CreateWindow(
         "Backend start", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1024, 768, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+        1920, 1080, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
 
     ImGui::CreateContext();
@@ -124,10 +124,67 @@ void show_properties_window(sdr_global_t *sdr)
 
 void show_main_window(sdr_global_t *sdr)
 {
-    ImGui::Begin("Main");
+    ImGui::Begin("Main", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginTabBar("Main")) {
         if (ImGui::BeginTabItem("Real Time I/Q samples")) {
+            ImVec2 win_size = ImGui::GetWindowSize();
+            win_size.y -= 50;
+            win_size.x -= 50;
             show_iq_scatter_plot(sdr, sdr->phy.raw_samples);
+            //show_iq_scatter_plot(sdr, sdr->phy.matched_samples);
+
+            ImPlot::BeginPlot("Pulse Shaping ConstellationPlot");
+            ImPlot::SetupAxes("I","Q");
+            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec =
+                        *static_cast<std::vector<std::complex<double>>*>(
+                            data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->phy.matched_samples,
+                sdr->phy.matched_samples.size());
+            ImPlot::EndPlot();
+
+            ImPlot::BeginPlot("Symb sync ConstellationPlot");
+            ImPlot::SetupAxes("I","Q");
+            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec =
+                        *static_cast<std::vector<std::complex<double>>*>(
+                            data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->phy.symb_sync_samples,
+                sdr->phy.symb_sync_samples.size());
+            ImPlot::EndPlot();
+
+            ImPlot::BeginPlot("Costas Loop ConstellationPlot");
+            ImPlot::SetupAxes("I","Q");
+            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec =
+                        *static_cast<std::vector<std::complex<double>>*>(
+                            data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->phy.costas_sync_samples,
+                sdr->phy.costas_sync_samples.size());
+            ImPlot::EndPlot();
+
+
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Tests")) {
@@ -143,13 +200,13 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> >
 {
     // Отображаем на графике сэмплы
     {
-        ImVec2 plotSize(500, 600);
+        //ImVec2 plotSize(500, 600);
         //ImGui::Begin("Test for I/Q samples update in Scatter plot");
         ImVec2 win_size = ImGui::GetWindowSize();
         win_size.y -= 50;
         win_size.x -= 50;
         if (!samples.empty()) {
-            ImPlot::BeginPlot("##ConstellationPlot", win_size);
+            ImPlot::BeginPlot("ConstellationPlot");
             ImPlot::SetupAxes("I","Q");
             ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
             ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
@@ -173,11 +230,11 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> >
 
 void show_test_sdr_set(sdr_global_t *sdr)
 {
-    static int rows = 6;
+    static int rows = 7;
     static int cols = 1;
     static int plot_size = 10;
-    static float rratios[] = {5, 5, 5, 5, 5, 5};
-    static float cratios[] = {5, 5, 5, 5, 5, 5};
+    static float rratios[] = {5, 5, 5, 5, 5, 5, 5};
+    static float cratios[] = {5, 5, 5, 5, 5, 5, 5};
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -277,6 +334,19 @@ void show_test_sdr_set(sdr_global_t *sdr)
                 sdr->test_set.matched_samples.size());
         ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
         ImPlot::PlotStems("Stems 2", sdr->test_set.xAxis_upsampled.data(), sdr->test_set.ted_indexes.data(),sdr->test_set.ted_indexes.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("7. Costas Loop Constellation", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_set.costas_samples,
+                sdr->test_set.costas_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
