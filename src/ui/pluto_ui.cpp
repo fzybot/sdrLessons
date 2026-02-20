@@ -121,6 +121,12 @@ void show_properties_window(sdr_global_t *sdr)
     ImGui::Text("Window size: %lfx%lf", ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
     ImGui::End();
 }
+void DemoHeader(const char* label, void(*demo)()) {
+    if (ImGui::TreeNodeEx(label)) {
+        demo();
+        ImGui::TreePop();
+    }
+}
 
 void show_main_window(sdr_global_t *sdr)
 {
@@ -191,10 +197,54 @@ void show_main_window(sdr_global_t *sdr)
             show_test_sdr_set(sdr);
             ImGui::EndTabItem();
         }
+        if(ImGui::BeginTabItem("Pulse Shaping")){
+            test_pulse_shaping_srrc(sdr);
+            test_pulse_shaping_hamming(sdr);
+            // srrc(int syms, double beta, int P, double t_off = 0)
+            ImGui::EndTabItem();
+        }
         ImGui::EndTabBar();
     }
     ImGui::End();
 }
+
+void test_pulse_shaping_srrc(sdr_global_t *sdr)
+{
+
+    if(ImPlot::BeginPlot("1. SRRC", ImVec2())){
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
+        ImPlot::SetupAxisLimits(ImAxis_X1, 30.0, 70.0);
+        //ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        int over_samp_rate = 10;
+        int syms = 5;
+        double beta[5] = {0, 0.25, 0.5, 0.75, 1};
+        std::vector<double> s1 = srrc(syms, beta[0], over_samp_rate, 0);
+        std::vector<double> s2 = srrc(syms, beta[1], over_samp_rate, 0);
+        std::vector<double> s3 = srrc(syms, beta[2], over_samp_rate, 0);
+        std::vector<double> s4 = srrc(syms, beta[3], over_samp_rate, 0);
+        std::vector<double> s5 = srrc(syms, beta[4], over_samp_rate, 0);
+        ImPlot::PlotLine("beta = 0",s1.data(),s1.size());
+        ImPlot::PlotLine("beta = 0.25",s2.data(),s2.size());
+        ImPlot::PlotLine("beta = 0.50",s3.data(),s3.size());
+        ImPlot::PlotLine("beta = 0.75",s4.data(),s4.size());
+        ImPlot::PlotLine("beta = 1",s5.data(),s5.size());
+        ImPlot::EndPlot();
+    }
+}
+
+void test_pulse_shaping_hamming(sdr_global_t *sdr)
+{
+    if (ImPlot::BeginPlot("Hamming", ImVec2()))
+    {
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
+        ImPlot::SetupAxisLimits(ImAxis_X1, 30.0, 70.0);
+        int M = 100;
+        std::vector<double> s10 = hamming(M);
+        ImPlot::PlotLine("Hamming",s10.data(),s10.size());
+        ImPlot::EndPlot();
+    }
+}
+
 
 void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> > &samples)
 {
@@ -244,43 +294,43 @@ void show_test_sdr_set(sdr_global_t *sdr)
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
         ImPlot::BeginPlot("1. Generate bit array", ImVec2(), ImPlotFlags_NoLegend);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-    ImPlot::PlotStems("Mouse Y", sdr->test_set.xAxis.data(), sdr->test_set.bit_array.data(), sdr->test_set.N, 0);
-    ImPlot::EndPlot();
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+        ImPlot::PlotStems("Mouse Y", sdr->test_set.xAxis.data(), sdr->test_set.bit_array.data(), sdr->test_set.N, 0);
+        ImPlot::EndPlot();
 
-    ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-    ImPlot::PlotScatterG(
-            "Signal",
-            [](int idx, void* data) {
-                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
-                return ImPlotPoint(idx, vec[idx].real());
-            },
-            &sdr->test_set.modulated_array,
-            sdr->test_set.modulated_array.size());
-    ImPlot::PlotScatterG(
-            "Signal",
-            [](int idx, void* data) {
-                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
-                return ImPlotPoint(idx, vec[idx].imag());
-            },
-            &sdr->test_set.modulated_array,
-            sdr->test_set.modulated_array.size());
-    ImPlot::EndPlot();
+        ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].real());
+                },
+                &sdr->test_set.modulated_array,
+                sdr->test_set.modulated_array.size());
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].imag());
+                },
+                &sdr->test_set.modulated_array,
+                sdr->test_set.modulated_array.size());
+        ImPlot::EndPlot();
 
-    ImPlot::BeginPlot("2. Modulated Constellation", ImVec2(), ImPlotFlags_NoLegend);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-    ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
-    ImPlot::PlotScatterG(
-            "Signal",
-            [](int idx, void* data) {
-                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
-                return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-            },
-            &sdr->test_set.modulated_array,
-            sdr->test_set.modulated_array.size());
-    ImPlot::EndPlot();
+        ImPlot::BeginPlot("2. Modulated Constellation", ImVec2(), ImPlotFlags_NoLegend);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_set.modulated_array,
+                sdr->test_set.modulated_array.size());
+        ImPlot::EndPlot();
     
         ImPlot::BeginPlot("3. Upsampling", ImVec2(), ImPlotFlags_NoLegend);
         ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);

@@ -134,15 +134,3 @@ std::vector<std::complex<double>> costas_loop(std::vector<std::complex<double>> 
     }
     return iq_corr;
 }
-// int main()
-// {
-//     std::cout<<"Hello World" << std::endl;
-//     std::vector<double> a = {1, 2, 3};
-//     std::vector<double> b = {0, 1, 0.5};
-//     std::vector<double> res = convolve(a,b);
-//     for(int i = 0; i < res.size(); i++){
-//         std::cout << res[i] << std::endl;
-//     }
-    
-//     return 0;
-// }
