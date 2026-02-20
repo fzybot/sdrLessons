@@ -67,7 +67,6 @@ struct SoapySDRStream *setup_stream(struct SoapySDRDevice *sdr, sdr_config_t *co
 {
     if(sdr){
         size_t channel_count = sizeof(config->channels) / sizeof(config->channels[0]);
-        printf("Channel count = %d\n", channel_count);
         SoapySDRStream *stream;
 
         if(isRx){
@@ -160,7 +159,7 @@ void run_sdr(sdr_global_t *sdr)
             // Dump info
             //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
             for (int i = 0; i < BUFFER_SIZE; i++){
-                sdr->phy.raw_samples[i] = std::complex(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
+                sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
             }
             sdr->phy.rx_timeNs = timeNs;
             last_time = timeNs;
@@ -197,12 +196,18 @@ void run_sdr(sdr_global_t *sdr)
 
 void calculate_test_set(sdr_global_t *sdr)
 {
+    sdr->test_set.N = sdr->test_set.Nbit / sdr->test_set.MO;
+    std::cout << "sdr->test_set.N = " << sdr->test_set.N << std::endl;
     sdr->test_set.xAxis.resize(sdr->test_set.N);
     sdr->test_set.xAxis_upsampled.resize(sdr->test_set.N * sdr->test_set.symb_size); 
     std::iota(sdr->test_set.xAxis.begin(), sdr->test_set.xAxis.end(), 0);
     std::iota(sdr->test_set.xAxis_upsampled.begin(), sdr->test_set.xAxis_upsampled.end(), 0);
     // 2. Модуляция\манипуляция BPSK\QPSK\N_QAM и др
-    sdr->test_set.modulated_array = modulate(sdr->test_set.bit_array, 1);
+    sdr->test_set.modulated_array = modulate(sdr->test_set.bit_array, sdr->test_set.MO);
+    for (int i = 0; i < sdr->test_set.modulated_array.size(); i++){
+        std::cout << sdr->test_set.modulated_array[i];
+    }
+    std::cout << std::endl;
 
     // 3. Формирование Символов (upsampling)
     sdr->test_set.upsampled_bit_array = upsample(sdr->test_set.modulated_array, sdr->test_set.symb_size);
@@ -218,17 +223,21 @@ void calculate_test_set(sdr_global_t *sdr)
     // sdr->test_set.channel_samples;
 
     // 5. Matched filter
+    std::cout << "5. Matched filter" << std::endl;
     sdr->test_set.matched_samples = pulse_shaping(sdr->test_set.pulse_shaped, 0, sdr->test_set.symb_size);
     for (int i = 0; i < sdr->test_set.matched_samples.size(); i++){
         std::cout << sdr->test_set.matched_samples[i] << " "; 
     }
     std::cout << "" << std::endl;
 
+    std::cout << "6. TED" << std::endl;
     sdr->test_set.ted_samples = ted(sdr->test_set.matched_samples, sdr->test_set.symb_size);
     sdr->test_set.ted_indexes.resize(sdr->test_set.N * sdr->test_set.symb_size); 
     for (int i = 0; i < sdr->test_set.ted_samples.size(); i++){
         sdr->test_set.ted_indexes[sdr->test_set.ted_samples[i]] = 10;
+        std::cout << sdr->test_set.ted_samples[i] << " ";
     }
+    std::cout << "" << std::endl;
 }
 
 

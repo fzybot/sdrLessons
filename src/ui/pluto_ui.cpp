@@ -139,7 +139,7 @@ void show_main_window(sdr_global_t *sdr)
     ImGui::End();
 }
 
-void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<float> > &samples)
+void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> > &samples)
 {
     // Отображаем на графике сэмплы
     {
@@ -158,7 +158,7 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<float> > 
                 "Signal",
                 [](int idx, void* data) {
                     auto& vec =
-                        *static_cast<std::vector<std::complex<float>>*>(
+                        *static_cast<std::vector<std::complex<double>>*>(
                             data);
                     return ImPlotPoint(vec[idx].real(), vec[idx].imag());
                 },
@@ -173,52 +173,73 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<float> > 
 
 void show_test_sdr_set(sdr_global_t *sdr)
 {
-    static int rows = 5;
+    static int rows = 6;
     static int cols = 1;
     static int plot_size = 10;
-    static float rratios[] = {5, 5, 5, 5, 5, 1};
-    static float cratios[] = {5, 5, 5, 5, 5, 1};
+    static float rratios[] = {5, 5, 5, 5, 5, 5};
+    static float cratios[] = {5, 5, 5, 5, 5, 5};
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
     static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems | ImPlotSubplotFlags_NoLegend;
-    ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkRows", (unsigned int*)&flags, ImPlotSubplotFlags_LinkRows);
-    ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkCols", (unsigned int*)&flags, ImPlotSubplotFlags_LinkCols);
+    // ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkRows", (unsigned int*)&flags, ImPlotSubplotFlags_LinkRows);
+    // ImGui::CheckboxFlags("ImPlotSubplotFlags_LinkCols", (unsigned int*)&flags, ImPlotSubplotFlags_LinkCols);
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
         ImPlot::BeginPlot("1. Generate bit array", ImVec2(), ImPlotFlags_NoLegend);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-        ImPlot::PlotStems("Mouse Y", sdr->test_set.xAxis.data(), sdr->test_set.bit_array.data(), sdr->test_set.N, 0);
-        ImPlot::EndPlot();
+    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+    ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+    ImPlot::PlotStems("Mouse Y", sdr->test_set.xAxis.data(), sdr->test_set.bit_array.data(), sdr->test_set.N, 0);
+    ImPlot::EndPlot();
 
-        ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::PlotScatterG(
-                "Signal",
-                [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
-                    return ImPlotPoint(idx, vec[idx].real());
-                },
-                &sdr->test_set.modulated_array,
-                sdr->test_set.modulated_array.size());
-        ImPlot::PlotScatterG(
-                "Signal",
-                [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
-                    return ImPlotPoint(idx, vec[idx].imag());
-                },
-                &sdr->test_set.modulated_array,
-                sdr->test_set.modulated_array.size());
-        ImPlot::EndPlot();
+    ImPlot::BeginPlot("2. Modulated Samples", ImVec2(), ImPlotFlags_NoLegend);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+    ImPlot::PlotScatterG(
+            "Signal",
+            [](int idx, void* data) {
+                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                return ImPlotPoint(idx, vec[idx].real());
+            },
+            &sdr->test_set.modulated_array,
+            sdr->test_set.modulated_array.size());
+    ImPlot::PlotScatterG(
+            "Signal",
+            [](int idx, void* data) {
+                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                return ImPlotPoint(idx, vec[idx].imag());
+            },
+            &sdr->test_set.modulated_array,
+            sdr->test_set.modulated_array.size());
+    ImPlot::EndPlot();
 
+    ImPlot::BeginPlot("2. Modulated Constellation", ImVec2(), ImPlotFlags_NoLegend);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+    ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+    ImPlot::PlotScatterG(
+            "Signal",
+            [](int idx, void* data) {
+                auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+            },
+            &sdr->test_set.modulated_array,
+            sdr->test_set.modulated_array.size());
+    ImPlot::EndPlot();
+    
         ImPlot::BeginPlot("3. Upsampling", ImVec2(), ImPlotFlags_NoLegend);
         ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
         ImPlot::PlotScatterG(
                 "Signal",
                 [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
+                },
+                &sdr->test_set.upsampled_bit_array,
+                sdr->test_set.upsampled_bit_array.size());
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(idx, vec[idx].imag());
                 },
                 &sdr->test_set.upsampled_bit_array,
                 sdr->test_set.upsampled_bit_array.size());
@@ -229,7 +250,7 @@ void show_test_sdr_set(sdr_global_t *sdr)
         ImPlot::PlotScatterG(
                 "Signal",
                 [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
                 },
                 &sdr->test_set.pulse_shaped,
@@ -241,7 +262,7 @@ void show_test_sdr_set(sdr_global_t *sdr)
         ImPlot::PlotLineG(
                 "Signal",
                 [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(idx, vec[idx].real());
                 },
                 &sdr->test_set.matched_samples,
@@ -249,7 +270,7 @@ void show_test_sdr_set(sdr_global_t *sdr)
         ImPlot::PlotLineG(
                 "Signal",
                 [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<float>>*>(data);
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(idx, vec[idx].imag());
                 },
                 &sdr->test_set.matched_samples,
