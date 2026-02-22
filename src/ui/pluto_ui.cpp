@@ -220,7 +220,6 @@ void test_rx_from_sdr(sdr_global_t *sdr)
     win_size.y -= 50;
     win_size.x -= 50;
     static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems | ImPlotSubplotFlags_NoLegend;
-    if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
         ImPlot::BeginPlot("Several Buffers from RX SDR", ImVec2());
         // ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
@@ -298,10 +297,6 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                 &sdr->test_rx_sdr.costas_samples,
                 sdr->test_rx_sdr.costas_samples.size());
         ImPlot::EndPlot();
-        
-
-        ImPlot::EndSubplots();
-    }
     
 }
 
