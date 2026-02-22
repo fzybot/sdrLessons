@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Открываем файл для чтения
-name = "/home/nsk/dev/sdrLessons/build/txdata.pcm"
+name = "/home/nsk/dev/test/sdrLessons/build/txdata.pcm"
 
 data = []
 imag = []
@@ -24,8 +24,27 @@ with open(name, "rb") as f:
 
 
 # fig, axs = plt.subplots(2, 1, layout='constrained')
-plt.figure(1)
-# axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
-plt.plot(count,(imag),color='red')  # Используем scatter для диаграммы созвездия
-plt.plot(count,(real), color='blue')  # Используем scatter для диаграммы созвездия
-plt.show()
+
+
+# plt.figure(1)
+# # axs[1].plot(count, np.abs(data),  color='grey')  # Используем scatter для диаграммы созвездия
+# plt.plot(count,(imag),color='red')  # Используем scatter для диаграммы созвездия
+# plt.plot(count,(real), color='blue')  # Используем scatter для диаграммы созвездия
+# plt.show()
+
+count = 0
+file = open("out.txt", "w")
+file.write("std::vector<std::complex<double>> rx_samples = {")
+for i in range(2414, 20600):
+    file.write("{")
+    file.write(str(real[i]))
+    file.write(", ")
+    file.write(str(imag[i]))
+    file.write("},")
+    count += 1
+    if(count % 20 == 0):
+        file.write("\n")
+file.write("\n")
+file.write("};")
+file.close()
+print(count)

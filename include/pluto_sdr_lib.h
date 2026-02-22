@@ -12,6 +12,7 @@
 
 typedef struct sdr_config_s{
     char *name; // usb or ip adress
+    bool tx_or_rx;
     int buffer_size;
     double tx_sample_rate;
     double tx_carrier_freq;
@@ -37,10 +38,11 @@ typedef struct sdr_phy_s{
 typedef struct test_set_s{
     int Nbit = 10;
     int N;
-    int MO = 2;
+    int MO = 1;
     int symb_size = 10;
     std::vector<int> xAxis;
     std::vector<int> xAxis_upsampled;
+    std::vector<int> barker = {};
     std::vector<int> bit_array = {0, 1, 1, 0, 1, 1, 0, 0, 0, 1};
 
     std::vector<std::complex<double>> modulated_array;
@@ -78,6 +80,7 @@ void fill_test_tx_buffer(int16_t *buffer, int size);
 // Преобразование сэмплов из двух массивов (I[N], Q[N]) в вид Pluto (buff[N*2] = {I, Q, I, Q, ..., I, Q})
 void transform_to_pluto_type_smples(std::vector<double> &I_part, std::vector<double> &Q_part, int16_t *buffer);
 void transform_from_pluto_type_samples(std::vector<double> &I_part, std::vector<double> &Q_part, int16_t *buffer);
+void prepare_test_tx_buffer(sdr_global_t *sdr);
 void calculate_test_set(sdr_global_t *sdr);
 
 void run_sdr(sdr_global_t *sdr);

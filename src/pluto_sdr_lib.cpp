@@ -152,12 +152,17 @@ void fill_test_tx_buffer(int16_t *buffer, int size)
 
 void run_sdr(sdr_global_t *sdr)
 {
-    if(sdr->sdr){
+    FILE *file;
+
+    if (sdr->sdr)
+    {
         const long  timeoutUs = 400000; // arbitrarily chosen (взяли из srsRAN)
         long long last_time = 0;
 
-        //FILE *file = fopen("txdata.pcm", "w");
-
+        // if(!sdr->sdr_config.tx_or_rx){
+        //     file = fopen("./txdata.pcm", "w");
+        // }
+            
         // Начинается работа с получением и отправкой сэмплов
         int buffers_read = 0;
         while (sdr->running)
@@ -172,15 +177,18 @@ void run_sdr(sdr_global_t *sdr)
                 printf("ERROR. SoapySDRDevice_readStream.\n");
                 continue;
             }
+            // if(!sdr->sdr_config.tx_or_rx){
+            //     fwrite(sdr->phy.pluto_rx_buffer, 2* sdr->sdr_config.buffer_size * sizeof(int16_t), 1, file);
+            // }
             
             // Dump info
-            //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
-            for (int i = 0; i < BUFFER_SIZE; i++){
-                sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
-            }
-            sdr->phy.matched_samples =  pulse_shaping(sdr->phy.raw_samples, 0, sdr->phy.Nsps);
-            sdr->phy.symb_sync_samples = symbol_sync(sdr->phy.matched_samples, sdr->phy.Nsps);
-            sdr->phy.costas_sync_samples = costas_loop(sdr->phy.symb_sync_samples);
+            // printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
+            // for (int i = 0; i < BUFFER_SIZE; i++){
+            //     sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
+            // }
+            // sdr->phy.matched_samples =  pulse_shaping(sdr->phy.raw_samples, 0, sdr->phy.Nsps);
+            // sdr->phy.symb_sync_samples = symbol_sync(sdr->phy.matched_samples, sdr->phy.Nsps);
+            // sdr->phy.costas_sync_samples = costas_loop(sdr->phy.symb_sync_samples);
             sdr->phy.rx_timeNs = timeNs;
             last_time = timeNs;
 
@@ -198,20 +206,83 @@ void run_sdr(sdr_global_t *sdr)
                 // Add byte to buffer
                 sdr->phy.pluto_tx_buffer[2 + i] = tx_time_byte << 4;
             }
-
-            if( (buffers_read % 10 == 0) ){
-                //printf("buffers_read: %d\n", buffers_read);
-                flags = SOAPY_SDR_HAS_TIME;
-                int st = SoapySDRDevice_writeStream(sdr->sdr, sdr->txStream, (const void * const*)tx_buffs, sdr->sdr_config.buffer_size, &flags, tx_time, timeoutUs);
-                if ((size_t)st != sdr->sdr_config.buffer_size)
-                {
-                    printf("TX Failed: %i\n", st);
-                }
-            }
-            buffers_read++;
+            // if(sdr->sdr_config.tx_or_rx == true){
+            //     if( (buffers_read % 2 == 0) ){
+            //         //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
+            //         flags = SOAPY_SDR_HAS_TIME;
+            //         int st = SoapySDRDevice_writeStream(sdr->sdr, sdr->txStream, (const void * const*)tx_buffs, sdr->sdr_config.buffer_size, &flags, tx_time, timeoutUs);
+            //         if ((size_t)st != sdr->sdr_config.buffer_size)
+            //         {
+            //             printf("TX Failed: %i\n", st);
+            //         }
+            //     }
+            //     buffers_read++;
+            // }
         }
+        //fclose(file);
         close_pluto_sdr(sdr);
     }
+}
+
+void prepare_test_tx_buffer(sdr_global_t *sdr)
+{
+    // 1. Код Баркера
+    std::cout << "Формируем код Баркера (13 бит)" << std::endl;
+    std::vector<int> barker_real = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
+    std::vector<int> barker_imag = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
+    std::vector<std::complex<double>> barker_complex;
+    for(int i = 0; i < barker_real.size(); i++){
+        barker_complex.push_back(std::complex(barker_real[i] * 1.1, barker_imag[i] * 1.1));
+        std::cout << barker_complex[i] << " ";
+    }
+    std::cout << std::endl;
+
+    // 2. "Hello Sibguti" в ASCII\UTF-8 - 104 бита
+    std::vector<int> hello_sibguti = {  0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 
+                                        1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 
+                                        0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 
+                                        1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1};
+
+    std::cout << "text len = " << hello_sibguti.size() << std::endl;
+
+    // 3. Модуляция BPSK
+    int nsps = sdr->phy.Nsps;
+    std::vector<std::complex<double>> modulated_array = modulate(hello_sibguti, 1);
+
+    // 4. Объединяем Код Баркера с текстом (после модуляции)
+    std::vector<std::complex<double>> frame_data;
+    frame_data.reserve(barker_complex.size() + hello_sibguti.size());
+    frame_data.insert(frame_data.end(), barker_complex.begin(), barker_complex.end());
+    frame_data.insert(frame_data.end(), modulated_array.begin(), modulated_array.end());
+
+    // 5. Апсемплинг и Формирующий фильтр
+    std::vector<std::complex<double>> upsampled = upsample(frame_data, nsps);
+    std::vector<std::complex<double>> pulse_shaped = pulse_shaping(upsampled, 0, nsps);
+    int j = 0;
+    for (int i = 13; i < 2 * sdr->sdr_config.buffer_size; i += 2)
+    {
+        if(j < pulse_shaped.size()){
+            
+            sdr->phy.pluto_tx_buffer[i] = int(pulse_shaped[j].real() * 2000) << 4;
+            sdr->phy.pluto_tx_buffer[i + 1] = int(pulse_shaped[j].imag() * 2000) << 4;
+            j++;
+        }
+        else
+        {
+            sdr->phy.pluto_tx_buffer[i] = int(7000);
+            sdr->phy.pluto_tx_buffer[i + 1] = int(7000);
+        }
+    }
+
+    //  Подготовим Флаги для Timestamp поля.
+    for(size_t i = 0; i < 2; i++)
+    {
+        sdr->phy.pluto_tx_buffer[0 + i] = 0xffff;
+        // 8 x timestamp words
+        sdr->phy.pluto_tx_buffer[10 + i] = 0xffff;
+    }
+
+
 }
 
 void calculate_test_set(sdr_global_t *sdr)
