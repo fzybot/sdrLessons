@@ -209,6 +209,16 @@ void test_pulse_shaping(sdr_global_t *sdr)
 {
     test_srrc(sdr);
     test_hamming(sdr);
+    test_sinc(sdr);
+}
+
+void test_sinc(sdr_global_t *sdr)
+{
+    std::vector<double> x = linspace(-4, 4, 41);
+    std::vector<double> val = sinc(x);
+    ImPlot::BeginPlot("sinc()", ImVec2());
+    ImPlot::PlotLine("Sinc", val.data(), val.size());
+    ImPlot::EndPlot();
 }
 void test_srrc(sdr_global_t *sdr)
 {
