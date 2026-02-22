@@ -51,6 +51,8 @@ add_subdirectory(./lib)
 set(SOURCES ${SRC_DIR}/main.cpp
             ${SRC_DIR}/pluto_sdr_lib.cpp
             ${SRC_DIR}/ui/pluto_ui.cpp
+            ${INCLUDE_LIB_DIR}/time_sync.cpp
+            ${INCLUDE_LIB_DIR}/freq_sync.cpp
             ${INCLUDE_LIB_DIR}/bit_generation.cpp
             ${INCLUDE_LIB_DIR}/math_operations.cpp
             ${INCLUDE_LIB_DIR}/modulation.cpp

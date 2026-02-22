@@ -17,6 +17,15 @@
 #include "pluto_sdr_lib.h"
 #include "pluto_ui.h"
 
+
+void test_header(const char* label, void(*demo)(sdr_global_t *),sdr_global_t *sdr) {
+    if (ImGui::TreeNodeEx(label)) {
+        demo(sdr);
+        ImGui::TreePop();
+    }
+}
+
+
 void run_gui(sdr_global_t *sdr)
 {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -96,7 +105,6 @@ void run_gui(sdr_global_t *sdr)
     SDL_Quit();
 }
 
-
 void show_global_menu_bar(sdr_global_t *sdr)
 {
     if(ImGui::BeginMainMenuBar()){
@@ -120,12 +128,6 @@ void show_properties_window(sdr_global_t *sdr)
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::Text("Window size: %lfx%lf", ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
     ImGui::End();
-}
-void DemoHeader(const char* label, void(*demo)()) {
-    if (ImGui::TreeNodeEx(label)) {
-        demo();
-        ImGui::TreePop();
-    }
 }
 
 void show_main_window(sdr_global_t *sdr)
@@ -194,13 +196,8 @@ void show_main_window(sdr_global_t *sdr)
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Tests")) {
-            show_test_sdr_set(sdr);
-            ImGui::EndTabItem();
-        }
-        if(ImGui::BeginTabItem("Pulse Shaping")){
-            test_pulse_shaping_srrc(sdr);
-            test_pulse_shaping_hamming(sdr);
-            // srrc(int syms, double beta, int P, double t_off = 0)
+            test_header("End2End test", show_test_sdr_set, sdr);
+            test_header("Pulse Shaping", test_pulse_shaping, sdr);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -208,7 +205,12 @@ void show_main_window(sdr_global_t *sdr)
     ImGui::End();
 }
 
-void test_pulse_shaping_srrc(sdr_global_t *sdr)
+void test_pulse_shaping(sdr_global_t *sdr)
+{
+    test_srrc(sdr);
+    test_hamming(sdr);
+}
+void test_srrc(sdr_global_t *sdr)
 {
 
     if(ImPlot::BeginPlot("1. SRRC", ImVec2())){
@@ -232,19 +234,17 @@ void test_pulse_shaping_srrc(sdr_global_t *sdr)
     }
 }
 
-void test_pulse_shaping_hamming(sdr_global_t *sdr)
+void test_hamming(sdr_global_t *sdr)
 {
     if (ImPlot::BeginPlot("Hamming", ImVec2()))
     {
         ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 30.0, 70.0);
-        int M = 100;
+        int M = 40;
         std::vector<double> s10 = hamming(M);
         ImPlot::PlotLine("Hamming",s10.data(),s10.size());
         ImPlot::EndPlot();
     }
 }
-
 
 void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> > &samples)
 {

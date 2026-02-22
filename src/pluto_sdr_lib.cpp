@@ -14,6 +14,8 @@
 #include "pulse_shaping.h"
 #include "modulation.h"
 #include "math_operations.h"
+#include "freq_sync.h"
+#include "time_sync.h"
 #include "pluto_sdr_lib.h"
 
 struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config)
