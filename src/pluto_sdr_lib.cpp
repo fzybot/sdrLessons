@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cstdint>
 #include <numeric>
+#include <algorithm>
 
 
 #include "bit_generation.h"
@@ -16,6 +17,7 @@
 #include "math_operations.h"
 #include "freq_sync.h"
 #include "time_sync.h"
+#include "test_samples.h"
 #include "pluto_sdr_lib.h"
 
 struct SoapySDRDevice *setup_pluto_sdr(sdr_config_t *config)
@@ -283,6 +285,24 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     }
 
 
+}
+
+void test_rx_sdr(sdr_global_t *sdr)
+{
+    int buffer_size = sdr->sdr_config.buffer_size;
+    double scalar_val = 40.0;
+
+    for (int i = 0; i < buffer_size; i++){
+        sdr->test_rx_sdr.channel_samples.push_back(test_rx_samples[i] / scalar_val);
+    }
+
+    sdr->test_rx_sdr.matched_samples  = pulse_shaping(sdr->test_rx_sdr.channel_samples, 0, sdr->test_rx_sdr.symb_size);
+    // for (int i = 0; i < buffer_size; i++){
+    //     std::cout << sdr->test_rx_sdr.matched_samples[i] << " ";
+    // }
+    // std::cout << std::endl;
+    sdr->test_rx_sdr.ted_samples = symbol_sync(sdr->test_rx_sdr.matched_samples, sdr->test_rx_sdr.symb_size);
+    sdr->test_rx_sdr.costas_samples = costas_loop(sdr->test_rx_sdr.ted_samples);
 }
 
 void calculate_test_set(sdr_global_t *sdr)

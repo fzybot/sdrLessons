@@ -28,20 +28,20 @@ std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a,
         int N = b.size();
         for (int i = 0; i < a.size(); i += N){
             for (int j = 0; j < N; j++){
-                double summ_real = 0.001;
-                double summ_imag = 0.001;
+                double summ_real = 0.0;
+                double summ_imag = 0.0;
                 for (int m = 0; m < b.size(); m++)
                 {
-                    summ_real = summ_real +  a[i+m].real() * b[j - m];
-                    summ_imag = summ_imag +  a[i+m].imag() * b[j - m];
+                    // TODO: multiply not working
+                    summ_real += a[i+m].real();// * b[j - m];
+                    summ_imag += a[i+m].imag();// * b[j - m];
                 }
-                result[i + j] = std::complex<double>(summ_real, summ_imag);
+                result[i + j] = {summ_real, summ_imag};
             }
         }
     }
     return result;
 }
-
 
 /*
 Test set from Python NumPy

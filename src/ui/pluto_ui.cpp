@@ -16,6 +16,7 @@
 #include "math_operations.h"
 #include "pluto_sdr_lib.h"
 #include "pluto_ui.h"
+#include "test_samples.h"
 
 
 void test_header(const char* label, void(*demo)(sdr_global_t *),sdr_global_t *sdr) {
@@ -200,12 +201,110 @@ void show_main_window(sdr_global_t *sdr)
         if (ImGui::BeginTabItem("Tests")) {
             test_header("End2End test", show_test_sdr_set, sdr);
             test_header("Pulse Shaping", test_pulse_shaping, sdr);
+            test_header("RX from SDR", test_rx_from_sdr, sdr);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
     }
     ImGui::End();
 }
+
+void test_rx_from_sdr(sdr_global_t *sdr)
+{
+    static int rows = 7;
+    static int cols = 1;
+    static int plot_size = 10;
+    static float rratios[] = {5, 5, 5, 5, 5, 5, 1};
+    static float cratios[] = {5, 5, 5, 5, 5, 5, 1};
+    ImVec2 win_size = ImGui::GetWindowSize();
+    win_size.y -= 50;
+    win_size.x -= 50;
+    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_ShareItems | ImPlotSubplotFlags_NoLegend;
+    if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
+
+        ImPlot::BeginPlot("Several Buffers from RX SDR", ImVec2());
+        // ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
+        // ImPlot::SetupAxisLimits(ImAxis_X1, 30.0, 70.0);
+        // ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::PlotLineG(
+                    "Signal",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &test_rx_samples,
+                    test_rx_samples.size());
+        ImPlot::EndPlot();
+
+
+        ImPlot::BeginPlot("1 Buffer size = 1920 [samples]", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::PlotLineG(
+                    "Signal",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &sdr->test_rx_sdr.channel_samples,
+                    sdr->test_rx_sdr.channel_samples.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("Matched filter", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::PlotLineG(
+                    "Signal",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &sdr->test_rx_sdr.matched_samples,
+                    sdr->test_rx_sdr.matched_samples.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("TED samples", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::PlotLineG(
+                    "Signal",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &sdr->test_rx_sdr.ted_samples,
+                    sdr->test_rx_sdr.ted_samples.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("TED samples Constellation", ImVec2(), ImPlotFlags_NoLegend);
+        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_rx_sdr.ted_samples,
+                sdr->test_rx_sdr.ted_samples.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("Costas Loop Constellation", ImVec2(), ImPlotFlags_NoLegend);
+        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+        ImPlot::PlotScatterG(
+                "Signal",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_rx_sdr.costas_samples,
+                sdr->test_rx_sdr.costas_samples.size());
+        ImPlot::EndPlot();
+        
+
+        ImPlot::EndSubplots();
+    }
+    
+}
+
 
 void test_pulse_shaping(sdr_global_t *sdr)
 {

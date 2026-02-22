@@ -6,6 +6,7 @@ void test_pulse_shaping(sdr_global_t *sdr);
 void test_srrc(sdr_global_t *sdr);
 void test_hamming(sdr_global_t *sdr);
 void test_sinc(sdr_global_t *sdr);
+void test_rx_from_sdr(sdr_global_t *sdr);
 
 void show_main_window(sdr_global_t *sdr);
 void show_properties_window(sdr_global_t *sdr);

@@ -42,7 +42,7 @@ typedef struct test_set_s{
     int symb_size = 10;
     std::vector<int> xAxis;
     std::vector<int> xAxis_upsampled;
-    std::vector<int> barker = {};
+    std::vector<int> barker;
     std::vector<int> bit_array = {0, 1, 1, 0, 1, 1, 0, 0, 0, 1};
 
     std::vector<std::complex<double>> modulated_array;
@@ -60,6 +60,7 @@ typedef struct test_set_s{
 typedef struct sdr_global_s{
     bool running;
     test_set_t test_set;
+    test_set_t test_rx_sdr;
     sdr_config_t sdr_config;
     sdr_phy_t phy;
     SoapySDRDevice *sdr;
@@ -82,6 +83,7 @@ void transform_to_pluto_type_smples(std::vector<double> &I_part, std::vector<dou
 void transform_from_pluto_type_samples(std::vector<double> &I_part, std::vector<double> &Q_part, int16_t *buffer);
 void prepare_test_tx_buffer(sdr_global_t *sdr);
 void calculate_test_set(sdr_global_t *sdr);
+void test_rx_sdr(sdr_global_t *sdr);
 
 void run_sdr(sdr_global_t *sdr);
 
