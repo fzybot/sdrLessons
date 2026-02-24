@@ -18,9 +18,13 @@ include_directories(${SDL2_INCLUDE_DIRS})
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
+# FFTW3
+# find_package(FFTW3 REQUIRED)
+
 include_directories(${INCLUDE_DIR})
 include_directories(${INCLUDE_DIR}/ui)
 include_directories(${INCLUDE_LIB_DIR})
+
 
 # ImGui
 add_library(imgui STATIC
@@ -59,6 +63,4 @@ set(SOURCES ${SRC_DIR}/main.cpp
             ${INCLUDE_LIB_DIR}/pulse_shaping.cpp)
 
 add_executable(main ${SOURCES})
-target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES} mylib)
-
-
+target_link_libraries(main PRIVATE imgui implot ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${SoapySDR_LIBRARIES} mylib fftw3)

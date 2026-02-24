@@ -50,8 +50,13 @@ typedef struct test_set_s{
     std::vector<std::complex<double>> pulse_shaped;
     std::vector<std::complex<double>> channel_samples;
     std::vector<std::complex<double>> matched_samples;
+    std::vector<std::complex<double>> coarsed_samples;
+    std::vector<std::complex<double>> matched_squared_samples;
     std::vector<std::complex<double>> ted_samples;
     std::vector<std::complex<double>> costas_samples;
+    std::vector<std::complex<double>> fft_in_samples;
+    std::vector<std::complex<double>> fft_out_samples;
+    std::vector<double> fft_out_abs;
     std::vector<int> ted_err_idx;
     std::vector<int> ted_indexes; 
 } test_set_t;

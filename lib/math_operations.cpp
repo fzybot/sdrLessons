@@ -33,8 +33,8 @@ std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a,
                 for (int m = 0; m < b.size(); m++)
                 {
                     // TODO: multiply not working
-                    summ_real += a[i+m].real();// * b[j - m];
-                    summ_imag += a[i+m].imag();// * b[j - m];
+                    summ_real += a[i+m].real() * b[j - m];
+                    summ_imag += a[i+m].imag() * b[j - m];
                 }
                 result[i + j] = {summ_real, summ_imag};
             }

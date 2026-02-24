@@ -1,5 +1,4 @@
-#include <SoapySDR/Device.h>
-#include <SoapySDR/Formats.h>
+#include <fftw3.h>
 #include <stdio.h> //printf
 #include <stdlib.h> //free
 #include <stdint.h>
@@ -10,6 +9,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include <SoapySDR/Device.h>
+#include <SoapySDR/Formats.h>
 
 #include "bit_generation.h"
 #include "pulse_shaping.h"
@@ -287,6 +288,36 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
 
 }
 
+// Function to perform a 1D fftshift in-place on a complex array
+void fftshift_1d(fftw_complex* data, int N) {
+    // Calculate the midpoint for the shift
+    int shift_len = (N + 1) / 2; // Correctly handles both even and odd N
+
+    // Allocate a temporary array to hold the shifted data
+    fftw_complex* temp = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+    if (temp == NULL) {
+        fprintf(stderr, "Memory allocation failed for fftshift temp array\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Perform the circular shift
+    for (int i = 0; i < N; i++) {
+        // The destination index using modulo arithmetic for circularity
+        int dst = (i + shift_len) % N;
+        temp[dst][0] = data[i][0]; // Real part
+        temp[dst][1] = data[i][1]; // Imaginary part
+    }
+
+    // Copy the shifted data back to the original array
+    for (int i = 0; i < N; i++) {
+        data[i][0] = temp[i][0];
+        data[i][1] = temp[i][1];
+    }
+
+    // Free the temporary array
+    fftw_free(temp);
+}
+
 void test_rx_sdr(sdr_global_t *sdr)
 {
     int buffer_size = sdr->sdr_config.buffer_size;
@@ -301,7 +332,76 @@ void test_rx_sdr(sdr_global_t *sdr)
     //     std::cout << sdr->test_rx_sdr.matched_samples[i] << " ";
     // }
     // std::cout << std::endl;
-    sdr->test_rx_sdr.ted_samples = symbol_sync(sdr->test_rx_sdr.matched_samples, sdr->test_rx_sdr.symb_size);
+
+     // 1. Create a vector of complex numbers
+    // std::vector<std::complex<double>> complex_vector;
+    // complex_vector.push_back(std::complex<double>(3.0, 4.0));
+    // complex_vector.push_back(std::complex<double>(5.0, -12.0));
+    // complex_vector.push_back(std::complex<double>(-8.0, 6.0));
+
+    // // 2. Create a vector to store the magnitudes (absolute values)
+    // // The magnitudes are real numbers, so we use std::vector<double>
+    // std::vector<double> magnitudes(complex_vector.size());
+
+    // // 3. Use std::transform to apply std::abs to each element
+    // std::transform(complex_vector.begin(),
+    //                complex_vector.end(),
+    //                magnitudes.begin(),
+    //                [](const std::complex<double>& z){ return std::abs(z); });
+
+    // Define the frequency and amplitude of the sine wave
+    const double frequency = 10.0;
+    const double amplitude = 1.0;
+    const double PI = std::acos(-1.0);
+
+    sdr->test_rx_sdr.fft_out_samples.resize(buffer_size);
+    sdr->test_rx_sdr.fft_in_samples.resize(buffer_size);
+    sdr->test_rx_sdr.fft_out_abs.resize(buffer_size);
+    sdr->test_rx_sdr.matched_squared_samples.resize(buffer_size);
+    sdr->test_rx_sdr.coarsed_samples.resize(buffer_size);
+    double fs = 1e6;
+    std::vector<double> freqs = linspace( (-1) * fs/2.0, (1) * fs/2.0, buffer_size);
+
+    for (int i = 0; i < buffer_size; ++i)
+    {
+        double angle = (static_cast<double>(i) / buffer_size) * (2.0 * PI * frequency);
+        sdr->test_rx_sdr.fft_in_samples[i] = amplitude * std::sin(angle);
+    }
+    std::transform(sdr->test_rx_sdr.matched_samples.begin(),
+                   sdr->test_rx_sdr.matched_samples.end(),
+                   sdr->test_rx_sdr.matched_squared_samples.begin(),
+                   [](const std::complex<double>& z){ return std::pow(z, 2); });
+                   
+    fftw_plan p = fftw_plan_dft_1d(buffer_size, 
+                                   reinterpret_cast<fftw_complex*>(sdr->test_rx_sdr.matched_squared_samples.data()), 
+                                   reinterpret_cast<fftw_complex*>(sdr->test_rx_sdr.fft_out_samples.data()), 
+                                   FFTW_FORWARD, 
+                                   FFTW_ESTIMATE);
+    fftw_execute(p);
+    fftshift_1d(reinterpret_cast<fftw_complex*>(sdr->test_rx_sdr.fft_out_samples.data()), buffer_size);
+    std::transform(sdr->test_rx_sdr.fft_out_samples.begin(),
+                   sdr->test_rx_sdr.fft_out_samples.end(),
+                   sdr->test_rx_sdr.fft_out_abs.begin(),
+                   [](const std::complex<double>& z){ return std::abs(z); });
+
+    std::vector<double>::iterator max_freq_ind = std::max_element(sdr->test_rx_sdr.fft_out_abs.begin(), sdr->test_rx_sdr.fft_out_abs.end());
+    int index = std::distance(sdr->test_rx_sdr.fft_out_abs.begin(), max_freq_ind);
+    std::cout << "max_freq = " << freqs[index] << std::endl;
+    double Ts = 1 / fs;
+    std::vector<double> times = linspace( 0, Ts * buffer_size, buffer_size);
+    std::complex<double> minus_one(0.0, -1.0);
+    for (int i = 0; i < buffer_size; i++)
+    {
+        // -1j*2*np.pi*max_freq*t/2.0
+        std::complex<double> val = minus_one * 2.0 * M_PI * (freqs[index]) * times[i] / 2.0;
+        sdr->test_rx_sdr.coarsed_samples[i] = sdr->test_rx_sdr.channel_samples[i] * std::exp(val);
+        // std::cout <<"Ts = " <<  Ts << " ";
+        // std::cout <<"times = " <<  times[i]<< " ";
+        // std::cout <<"val = " <<  val<< " ";
+        // std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    sdr->test_rx_sdr.ted_samples = symbol_sync(sdr->test_rx_sdr.coarsed_samples, sdr->test_rx_sdr.symb_size);
     sdr->test_rx_sdr.costas_samples = costas_loop(sdr->test_rx_sdr.ted_samples);
 }
 
