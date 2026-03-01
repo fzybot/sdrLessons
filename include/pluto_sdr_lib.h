@@ -8,16 +8,18 @@
 #include <complex.h>
 #include <vector>
 
-#define BUFFER_SIZE 1920
+#define BUFFER_SIZE 1920 * 2
 
 typedef struct sdr_config_s{
     char *name; // usb or ip adress
-    bool tx_or_rx;
+    bool is_tx;
     int buffer_size;
+    double tx_bandwidth;
     double tx_sample_rate;
     double tx_carrier_freq;
     double tx_gain;
 
+    double rx_bandwidth;
     double rx_sample_rate;
     double rx_carrier_freq;
     double rx_gain;
@@ -25,7 +27,7 @@ typedef struct sdr_config_s{
 } sdr_config_t;
 
 typedef struct sdr_phy_s{
-    int Nsps = 10;
+    int Nsps = 16;
     long long rx_timeNs;
     int16_t pluto_rx_buffer[2 * BUFFER_SIZE];
     int16_t pluto_tx_buffer[2 * BUFFER_SIZE];
@@ -39,7 +41,7 @@ typedef struct test_set_s{
     int Nbit = 10;
     int N;
     int MO = 1;
-    int symb_size = 10;
+    int symb_size = 16;
     std::vector<int> xAxis;
     std::vector<int> xAxis_upsampled;
     std::vector<int> barker;
@@ -48,14 +50,22 @@ typedef struct test_set_s{
     std::vector<std::complex<double>> modulated_array;
     std::vector<std::complex<double>> upsampled_bit_array;
     std::vector<std::complex<double>> pulse_shaped;
+    std::vector<std::complex<int>> samples_to_tx;
+
     std::vector<std::complex<double>> channel_samples;
     std::vector<std::complex<double>> matched_samples;
     std::vector<std::complex<double>> coarsed_samples;
+    std::vector<std::complex<double>> shifted_before_cl;
     std::vector<std::complex<double>> matched_squared_samples;
     std::vector<std::complex<double>> ted_samples;
+    std::vector<std::complex<double>> quantalph;
     std::vector<std::complex<double>> costas_samples;
     std::vector<std::complex<double>> fft_in_samples;
     std::vector<std::complex<double>> fft_out_samples;
+    std::vector<int> demod_bit_array;
+    std::vector<double> barker_corr_real;
+    std::vector<double> barker_corr_imag;
+    std::vector<int> barker_correlation;
     std::vector<double> fft_out_abs;
     std::vector<int> ted_err_idx;
     std::vector<int> ted_indexes; 

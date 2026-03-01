@@ -6,8 +6,8 @@
 std::vector<int> ted(std::vector<std::complex<double>> &matched, int samples_per_symbol)
 {
     int K1, K2, p1, p2 = 0;
-    double BnTs = 0.001;
-    double Kp = 0.002;
+    double BnTs = 0.1;
+    double Kp = 0.02;
     double zeta = sqrt(2) / 2;
     double theta = (BnTs / samples_per_symbol) / (zeta + (0.25 / zeta));
     K1 = -4 * zeta * theta / ( (1 + 2 * zeta * theta + pow(theta,2)) * Kp);
@@ -35,7 +35,6 @@ std::vector<int> ted(std::vector<std::complex<double>> &matched, int samples_per
         tau = round(p2 * samples_per_symbol);
         errof.push_back(i + samples_per_symbol + tau);
     }
-
     return errof;
 }
 

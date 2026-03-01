@@ -14,6 +14,8 @@ template<typename T> T arange(T start, T stop, T step = 1) {
 }
 
 std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a, std::vector<double> &b);
+std::vector<int> correlate_valid(const std::vector<int> &a, const std::vector<int> &v);
+std::vector<double> correlate_manual(const std::vector<double> &a, const std::vector<double> &v, const std::string &mode = "same");
 
 std::vector<double> convolve(std::vector<double> &a, std::vector<double> &b);
 std::vector<double> sinc(const std::vector<double> &x);

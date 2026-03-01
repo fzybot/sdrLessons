@@ -29,7 +29,7 @@ void test_header(const char* label, void(*demo)(sdr_global_t *),sdr_global_t *sd
 
 void run_gui(sdr_global_t *sdr)
 {
-    //if(!sdr->sdr_config.tx_or_rx){
+    if(!sdr->sdr_config.is_tx){
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
         SDL_Window* window = SDL_CreateWindow(
             "Backend start", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -105,7 +105,7 @@ void run_gui(sdr_global_t *sdr)
         SDL_GL_DeleteContext(gl_context);
         SDL_DestroyWindow(window);
         SDL_Quit();
-    //}
+    }
 }
 
 void show_global_menu_bar(sdr_global_t *sdr)
@@ -199,18 +199,85 @@ void show_main_window(sdr_global_t *sdr)
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Tests")) {
-            test_header("End2End test", show_test_sdr_set, sdr);
+            // test_header("End2End test", show_test_sdr_set, sdr);
+            test_header("TX side", show_tx_data, sdr);
             test_header("Pulse Shaping", test_pulse_shaping, sdr);
             test_header("RX from SDR", test_rx_from_sdr, sdr);
             test_header("Matched Filter", test_rx_from_sdr_matched_filter, sdr);
             test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
             test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
             test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr);
+            test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr);
+            
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
     }
     ImGui::End();
+}
+
+void show_tx_data(sdr_global_t *sdr)
+{
+    static int rows = 2;
+    static int cols = 1;
+    static float rratios[] = {5, 5};
+    static float cratios[] = {5, 5};
+    bool hovered = false;
+    bool held = false;
+    ImVec2 win_size = ImGui::GetWindowSize();
+    win_size.y -= 50;
+    win_size.x -= 50;
+    float color[] = {3.0, 1.0};
+    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_None;
+    if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
+
+        ImPlot::BeginPlot("Pulse Shaped", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "I",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &sdr->test_rx_sdr.pulse_shaped,
+                    sdr->test_rx_sdr.pulse_shaped.size());
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "Q",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].imag());
+                    },
+                    &sdr->test_rx_sdr.pulse_shaped,
+                    sdr->test_rx_sdr.pulse_shaped.size());
+        ImPlot::EndPlot();
+                    
+
+        ImPlot::BeginPlot("Samples to TX", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "I",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<int>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &sdr->test_rx_sdr.samples_to_tx,
+                    sdr->test_rx_sdr.samples_to_tx.size());
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "Q",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<int>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].imag());
+                    },
+                    &sdr->test_rx_sdr.samples_to_tx,
+                    sdr->test_rx_sdr.samples_to_tx.size());
+        ImPlot::EndPlot();
+
+        ImPlot::EndSubplots();
+    }
 }
 
 void test_rx_from_sdr(sdr_global_t *sdr)
@@ -353,13 +420,12 @@ void test_rx_from_sdr_matched_filter(sdr_global_t *sdr)
 
 }
 
-
 void test_rx_from_sdr_coarse_freq_sync(sdr_global_t *sdr)
 {
-    static int rows = 4;
+    static int rows = 5;
     static int cols = 1;
-    static float rratios[] = {5, 5, 5, 5};
-    static float cratios[] = {5, 5, 5, 5};
+    static float rratios[] = {5, 5, 5, 5, 5};
+    static float cratios[] = {5, 5, 5, 5, 5};
     bool hovered = false;
     bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
@@ -452,17 +518,33 @@ void test_rx_from_sdr_coarse_freq_sync(sdr_global_t *sdr)
                     &sdr->test_rx_sdr.coarsed_samples,
                     sdr->test_rx_sdr.coarsed_samples.size());
         ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("Baseband shift Constellation", ImVec2());
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
+        ImPlot::PlotScatterG(
+                "I/Q",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_rx_sdr.shifted_before_cl,
+                sdr->test_rx_sdr.shifted_before_cl.size());
+        ImPlot::EndPlot();
+
+
+        
         
         ImPlot::EndSubplots();
     }
 }
+
 void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
 {
 
-    static int rows = 2;
+    static int rows = 3;
     static int cols = 1;
-    static float rratios[] = {5, 5};
-    static float cratios[] = {5, 5};
+    static float rratios[] = {5, 5, 5};
+    static float cratios[] = {5, 5, 5};
     bool hovered = false;
     bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
@@ -509,7 +591,24 @@ void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
                 sdr->test_rx_sdr.ted_samples.size());
         ImPlot::EndPlot();
 
+        ImPlot::BeginPlot("sdr->test_rx_sdr.quantalph", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
+        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
+        ImPlot::PlotScatterG(
+                "I/Q",
+                [](int idx, void* data) {
+                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+                },
+                &sdr->test_rx_sdr.quantalph,
+                sdr->test_rx_sdr.quantalph.size());
+        ImPlot::EndPlot();
+
+
         ImPlot::EndSubplots();
+        
     }
 
 }
@@ -530,14 +629,7 @@ void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
     static ImPlotSubplotFlags flags = ImPlotSubplotFlags_None;
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
-    
-        std::vector<std::complex<double>> test;
-        for(int i = 40; i < 155; i++){
-            test.push_back(sdr->test_rx_sdr.costas_samples[i]);
-        }
         ImPlot::BeginPlot("Costas Loop Constellation", ImVec2());
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
         ImPlot::PlotScatterG(
                 "I/Q",
@@ -547,20 +639,6 @@ void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
                 },
                 &sdr->test_rx_sdr.costas_samples,
                 sdr->test_rx_sdr.costas_samples.size());
-        ImPlot::EndPlot();
-
-        ImPlot::BeginPlot("Costas Loop (cutted) Constellation", ImVec2());
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
-        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
-        ImPlot::PlotScatterG(
-                "I/Q",
-                [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
-                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-                },
-                &test,
-                test.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("Costas Loop Time", ImVec2());
@@ -598,6 +676,34 @@ void test_pulse_shaping(sdr_global_t *sdr)
     test_sinc(sdr);
 }
 
+void test_rx_from_sdr_barker_corr(sdr_global_t *sdr)
+{
+    static int rows = 3;
+    static int cols = 1;
+    static float rratios[] = {5, 5, 5};
+    static float cratios[] = {5, 5, 5};
+    bool hovered = false;
+    bool held = false;
+    ImVec2 win_size = ImGui::GetWindowSize();
+    win_size.y -= 50;
+    win_size.x -= 50;
+    float color[] = {3.0, 1.0};
+    static ImPlotSubplotFlags flags = ImPlotSubplotFlags_None;
+    if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
+
+        ImPlot::BeginPlot("Barker Correlation", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
+        ImPlot::PlotLine("Sinc", sdr->test_rx_sdr.barker_corr_real.data(), sdr->test_rx_sdr.barker_corr_real.size());
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
+        ImPlot::PlotLine("Sinc", sdr->test_rx_sdr.barker_corr_imag.data(), sdr->test_rx_sdr.barker_corr_imag.size());
+        ImPlot::EndPlot();
+        
+
+        ImPlot::EndSubplots();
+    }
+}
+
 void test_sinc(sdr_global_t *sdr)
 {
     std::vector<double> x = linspace(-4, 4, 41);
@@ -606,6 +712,7 @@ void test_sinc(sdr_global_t *sdr)
     ImPlot::PlotLine("Sinc", val.data(), val.size());
     ImPlot::EndPlot();
 }
+
 void test_srrc(sdr_global_t *sdr)
 {
 

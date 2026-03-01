@@ -1,47 +1,151 @@
 #include <iostream>
 #include <vector>
+#include <algorithm> 
 #include <complex.h>
 #include <numbers> 
 
-std::vector<double> convolve(std::vector<double> &a, std::vector<double> &b){
+// std::vector<double> convolve(std::vector<double> &a, std::vector<double> &b){
     
-    std::vector<double> result;
-    for(int n = 0; n < a.size(); n += 10)
-    {
-        double summ = 0;
-        for(int m = 0; m < b.size(); m++)
-        {
-            summ += a[m] * b[n - m];
-        }
-        result.push_back(summ);
+//     std::vector<double> result;
+//     for(int n = 0; n < a.size(); n += 10)
+//     {
+//         double summ = 0;
+//         for(int m = 0; m < b.size(); m++)
+//         {
+//             summ += a[m] * b[n - m];
+//         }
+//         result.push_back(summ);
+//     }
+//     return result;
+// }
+
+std::vector<double> correlate_manual(const std::vector<double>& a, const std::vector<double>& v, const std::string& mode = "same") {
+    int n1 = a.size();
+    int n2 = v.size();
+
+    // Reverse the second array for cross-correlation
+    std::vector<double> v_rev = v;
+    std::reverse(v_rev.begin(), v_rev.end());
+
+    int output_size;
+    int start_index;
+
+    if (mode == "full") {
+        output_size = n1 + n2 - 1;
+        start_index = -(n2 - 1);
+    } else if (mode == "same") {
+        output_size = n1;
+        // For "same" mode, the output is centered with the same size as 'a'.
+        // The start index corresponds to the lag where 'a' and 'v' overlap appropriately.
+        // This is a bit complex to calculate precisely based on the definition of "same" mode in numpy, 
+        // but the result should match the size of 'a'.
+        // A common implementation for "same" involves taking the middle part of the "full" result.
+    } else { // Default is "valid"
+        output_size = std::max(0, n1 - n2 + 1);
+        start_index = n2 - 1;
     }
+    
+    // For manual implementation, it's easier to compute "full" and then trim.
+    std::vector<double> full_result(n1 + n2 - 1, 0.0);
+    for (int i = 0; i < n1; ++i) {
+        for (int j = 0; j < n2; ++j) {
+            full_result[i + j] += a[i] * v_rev[j]; // v_rev[j] is effectively v[n2 - 1 - j]
+        }
+    }
+
+    // Trim the "full" result based on the mode
+    std::vector<double> result;
+    if (mode == "full") {
+        result = full_result;
+    } else if (mode == "same") {
+        int start = (n2 - 1) / 2;
+        result.reserve(n1);
+        for (int i = 0; i < n1; ++i) {
+            result.push_back(full_result[i + start]);
+        }
+    } else { // "valid"
+        int start = n2 - 1;
+        result.reserve(output_size);
+        for (int i = 0; i < output_size; ++i) {
+            result.push_back(full_result[i + start]);
+        }
+    }
+
     return result;
 }
 
-std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a, std::vector<double> &b)
-{
-    std::vector<std::complex<double>> result;
-    result.resize(a.size());
-    std::complex<double> val;
-    if (a.size() > b.size())
-    {
-        int N = b.size();
-        for (int i = 0; i < a.size(); i += N){
-            for (int j = 0; j < N; j++){
-                double summ_real = 0.0;
-                double summ_imag = 0.0;
-                for (int m = 0; m < b.size(); m++)
-                {
-                    // TODO: multiply not working
-                    summ_real += a[i+m].real() * b[j - m];
-                    summ_imag += a[i+m].imag() * b[j - m];
-                }
-                result[i + j] = {summ_real, summ_imag};
-            }
-        }
+std::vector<double> correlate_valid(const std::vector<int>& a, const std::vector<int>& v) {
+    if (a.size() < v.size()) {
+        // NumPy's correlate(a, v) computes correlation of a with v
+        // The result length for 'valid' mode is max(M, N) - min(M, N) + 1
+        // It's often clearer to ensure 'a' is the longer sequence
+        // For simplicity here, we assume a is long enough.
+        // A more robust implementation would handle this case or swap a and v
     }
+
+    int M = a.size();
+    int N = v.size();
+    int K = M - N + 1; // Size of the result for 'valid' mode
+    std::vector<double> result(K, 0.0);
+
+    // NumPy correlates a with v (convolution of a with time-reversed v)
+    // The formula is c_k = sum_n a[n + k] * conj(v[n])
+    // For real numbers, conj is not needed.
+    for (int k = 0; k < K; ++k) {
+        double sum = 0.0;
+        for (int n = 0; n < N; ++n) {
+            sum += a[n + k] * v[n];
+        }
+        result[k] = sum;
+    }
+
     return result;
 }
+
+std::vector< std::complex<double> > convolve(std::vector<std::complex<double>> &upsampled, std::vector<double> &b) {
+    std::vector <std::complex<double>> convolved;
+    for (int n = 0; n < upsampled.size(); ++n) 
+        {
+            std::complex<double> sum(0.0f, 0.0f);
+            for (int k = 0; k < b.size(); ++k) 
+            {
+                int idx = n - k;
+                if (idx >= 0 && idx < upsampled.size()) { 
+                sum += upsampled[idx] * b[k];
+            }
+        }
+        convolved.push_back(sum);
+        }
+    return convolved;
+}
+
+// std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a, std::vector<double> &b)
+// {
+//     std::vector<std::complex<double>> result;
+//     result.resize(a.size());
+//     std::complex<double> val;
+//     if (a.size() > b.size())
+//     {
+//         int N = b.size();
+//         for (int i = 0; i < a.size(); i += N){
+//             for (int j = 0; j < N; j++){
+//                 double summ_real = 0.0;
+//                 double summ_imag = 0.0;
+//                 for (int m = 0; m < b.size(); m++)
+//                 {
+//                     // TODO: multiply not working
+//                     double real = a[i + m].real() * b[j - m];
+//                     double imag = a[i+m].imag() * b[j - m];
+//                     summ_real += real;
+//                     summ_imag += imag;
+//                 }
+//                 val = (summ_real, summ_imag);
+//                 result[i + j] = val;
+//             }
+//         }
+//     }
+//     return result;
+// }
 
 /*
 Test set from Python NumPy
@@ -90,6 +194,12 @@ std::vector<double> sinc(const std::vector<double>& x) {
     return result;
 }
 
+int f()
+{
+    static int i;
+    return ++i;
+}
+
 std::vector<double> linspace(double start, double end, int num) {
     std::vector<double> linspaced;
     if (num == 0) { return linspaced; }
@@ -97,9 +207,11 @@ std::vector<double> linspace(double start, double end, int num) {
         linspaced.push_back(start);
         return linspaced;
     }
+    linspaced.resize(num);
     double delta = (end - start) / (num - 1);
     for (int i = 0; i < num; ++i) {
-        linspaced.push_back(start + delta * i);
+        double c = delta * static_cast<double>(i);
+        linspaced[i] = start + c;
     }
     return linspaced;
 }
