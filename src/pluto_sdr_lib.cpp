@@ -165,7 +165,7 @@ void fill_test_tx_buffer(int16_t *buffer, int size)
 
 void run_sdr(sdr_global_t *sdr)
 {
-    FILE *file;
+    // FILE *file;
 
     if (sdr->sdr)
     {
@@ -190,12 +190,12 @@ void run_sdr(sdr_global_t *sdr)
                 printf("ERROR. SoapySDRDevice_readStream.\n");
                 continue;
             }
-            // if(!sdr->sdr_config.is_tx){
-            //     fwrite(sdr->phy.pluto_rx_buffer, 2* sdr->sdr_config.buffer_size * sizeof(int16_t), 1, file);
-            //     for (int i = 0; i < BUFFER_SIZE; i++){
-            //         sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
-            //     }
-            // }
+            if(!sdr->sdr_config.is_tx){
+                // fwrite(sdr->phy.pluto_rx_buffer, 2* sdr->sdr_config.buffer_size * sizeof(int16_t), 1, file);
+                for (int i = 0; i < BUFFER_SIZE; i++){
+                    sdr->phy.raw_samples[i] = std::complex<double>(sdr->phy.pluto_rx_buffer[i * 2], sdr->phy.pluto_rx_buffer[i * 2 + 1] );
+                }
+            }
 
             // Dump info
             // printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
@@ -222,20 +222,20 @@ void run_sdr(sdr_global_t *sdr)
                 // Add byte to buffer
                 sdr->phy.pluto_tx_buffer[2 + i] = tx_time_byte << 4;
             }
-            // if(sdr->sdr_config.is_tx == true){
-            //     if( (buffers_read % 2 == 0) ){
-            //         //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
-            //         flags = SOAPY_SDR_HAS_TIME;
-            //         int st = SoapySDRDevice_writeStream(sdr->sdr, sdr->txStream, (const void * const*)tx_buffs, sdr->sdr_config.buffer_size, &flags, tx_time, timeoutUs);
-            //         if ((size_t)st != sdr->sdr_config.buffer_size)
-            //         {
-            //             printf("TX Failed: %i\n", st);
-            //         }
-            //     }
-            //     buffers_read++;
-            // }
+            if(sdr->sdr_config.is_tx == true){
+                if( (buffers_read % 2 == 0) ){
+                    //printf("Buffer: %lu - Samples: %i, Flags: %i, Time: %lli, TimeDiff: %lli\n", 0, sr, flags, timeNs, timeNs - last_time);
+                    flags = SOAPY_SDR_HAS_TIME;
+                    int st = SoapySDRDevice_writeStream(sdr->sdr, sdr->txStream, (const void * const*)tx_buffs, sdr->sdr_config.buffer_size, &flags, tx_time, timeoutUs);
+                    if (st != sdr->sdr_config.buffer_size)
+                    {
+                        printf("TX Failed: %i\n", st);
+                    }
+                }
+                buffers_read++;
+            }
         }
-        fclose(file);
+        // fclose(file);
         close_pluto_sdr(sdr);
     }
 }
@@ -247,7 +247,7 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     std::vector<int> barker_real = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
     std::vector<int> barker_imag = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
     std::vector<std::complex<double>> barker_complex;
-    for(int i = 0; i < barker_real.size(); i++){
+    for(int i = 0; i < (int)barker_real.size(); i++){
         barker_complex.push_back(std::complex(barker_real[i] * 1.1f, barker_imag[i] * 1.1f));
         //std::cout << barker_complex[i] << " ";
     }
@@ -296,7 +296,7 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     std::vector<std::complex<double>> upsampled = upsample(summ_vector, nsps);
     std::vector<double> filter = srrc(syms, beta, nsps, 0.0f);
     sdr->test_rx_sdr.pulse_shaped = convolve(upsampled, filter);
-    for (int i = 0; i < sdr->test_rx_sdr.pulse_shaped.size(); i++)
+    for (int i = 0; i < (int)sdr->test_rx_sdr.pulse_shaped.size(); i++)
     {
         sdr->test_rx_sdr.samples_to_tx.push_back({  int(sdr->test_rx_sdr.pulse_shaped[i].real() * 2000) << 4, 
                                                     int(sdr->test_rx_sdr.pulse_shaped[i].imag() * 2000) << 4});
@@ -306,7 +306,7 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     int j = 0;
     for (int i = 13; i < 2 * sdr->sdr_config.buffer_size; i += 2)
     {
-        if(j < sdr->test_rx_sdr.pulse_shaped.size()){
+        if(j < (int)sdr->test_rx_sdr.pulse_shaped.size()){
             
             sdr->phy.pluto_tx_buffer[i] = sdr->test_rx_sdr.samples_to_tx[j].real();
             sdr->phy.pluto_tx_buffer[i + 1] = sdr->test_rx_sdr.samples_to_tx[j].imag();
@@ -484,11 +484,14 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
 void test_rx_bpsk_barker13(sdr_global_t *sdr)
 {
     int buffer_size = sdr->sdr_config.buffer_size;
-    sdr->test_bpsk_barker13.fft_out_samples.resize(buffer_size);
-    sdr->test_bpsk_barker13.fft_in_samples.resize(buffer_size);
-    sdr->test_bpsk_barker13.fft_out_abs.resize(buffer_size);
-    sdr->test_bpsk_barker13.matched_squared_samples.resize(buffer_size);
-    sdr->test_bpsk_barker13.coarsed_samples.resize(buffer_size);
+    int sample_rate = sdr->sdr_config.rx_sample_rate;
+    int nsps = sdr->phy.Nsps;
+
+    // sdr->test_bpsk_barker13.fft_out_samples.resize(buffer_size);
+    // sdr->test_bpsk_barker13.fft_in_samples.resize(buffer_size);
+    // sdr->test_bpsk_barker13.fft_out_abs.resize(buffer_size);
+    // sdr->test_bpsk_barker13.matched_squared_samples.resize(buffer_size);
+    // sdr->test_bpsk_barker13.coarsed_samples.resize(buffer_size);
     
     // 1. Кладем сэмплы в буффер (по размеру буфера)
     int target_idx = 0;
@@ -497,45 +500,14 @@ void test_rx_bpsk_barker13(sdr_global_t *sdr)
     }
 
     // 2. Согласованный фильтр (SRRC)
-    int nsps = sdr->phy.Nsps;
     int syms = 5;
     double beta = 0.75;
     std::vector<double> filter = srrc(syms, beta, nsps, 0.0f);
     sdr->test_bpsk_barker13.matched_samples = convolve(sdr->test_bpsk_barker13.channel_samples, filter);
 
     // 3. Грубая частотная синхронизация (Coarse Freq Correction (Blind Correction))
-    int sample_rate = 4e6;
-    double Ts = 1.0f / sample_rate;
-    std::transform(sdr->test_bpsk_barker13.matched_samples.begin(),
-                   sdr->test_bpsk_barker13.matched_samples.end(),
-                   sdr->test_bpsk_barker13.matched_squared_samples.begin(),
-                   [](const std::complex<double>& z){ return std::pow(z, 2); });
-
-    fftw_plan p = fftw_plan_dft_1d(buffer_size, 
-                                   reinterpret_cast<fftw_complex*>(sdr->test_bpsk_barker13.matched_squared_samples.data()), 
-                                   reinterpret_cast<fftw_complex*>(sdr->test_bpsk_barker13.fft_out_samples.data()), 
-                                   FFTW_FORWARD, 
-                                   FFTW_ESTIMATE);
-    fftw_execute(p);
-    std::transform(sdr->test_bpsk_barker13.fft_out_samples.begin(),
-                   sdr->test_bpsk_barker13.fft_out_samples.end(),
-                   sdr->test_bpsk_barker13.fft_out_abs.begin(),
-                   [](const std::complex<double>& z){ return std::abs(z); });
-
-    fftshift_1d(sdr->test_bpsk_barker13.fft_out_abs, buffer_size);
-    std::vector<double> freqs = arange( (-1) * sample_rate/2.0f, (1) * sample_rate/2.0f, (double)(sample_rate / buffer_size));
-    
-    std::vector<double>::iterator max_freq_ind = std::max_element(sdr->test_bpsk_barker13.fft_out_abs.begin(), sdr->test_bpsk_barker13.fft_out_abs.end());
-    int index = std::distance(sdr->test_bpsk_barker13.fft_out_abs.begin(), max_freq_ind);
-    double coarse_freq = freqs[index] / 2.0;
-
-    
-    std::vector<double> times = arange(0.0f, (double)(Ts * buffer_size), Ts);
-    for (int i = 0; i < buffer_size; i++)
-    {
-        std::complex<double> val = std::complex<double>(0.0, -1.0f * 2.0 * M_PI * (coarse_freq) * times[i]);
-        sdr->test_bpsk_barker13.coarsed_samples[i] = sdr->test_bpsk_barker13.matched_samples[i] * std::exp(val);
-    }
+    double coarse_freq = coarse_max_freq_calculation(sdr->test_bpsk_barker13.matched_samples, buffer_size, sample_rate);
+    sdr->test_bpsk_barker13.coarsed_samples = coarse_freq_sync(sdr->test_bpsk_barker13.matched_samples, coarse_freq, buffer_size, sample_rate);
 
     // 4. Символьная синхронизация
     sdr->test_bpsk_barker13.ted_samples = clock_recovery_mueller_muller(sdr->test_bpsk_barker13.coarsed_samples, nsps);
@@ -555,7 +527,7 @@ void calculate_test_set(sdr_global_t *sdr)
     std::iota(sdr->test_set.xAxis_upsampled.begin(), sdr->test_set.xAxis_upsampled.end(), 0);
     // 2. Модуляция\манипуляция BPSK\QPSK\N_QAM и др
     sdr->test_set.modulated_array = modulate(sdr->test_set.bit_array, sdr->test_set.MO);
-    for (int i = 0; i < sdr->test_set.modulated_array.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.modulated_array.size(); i++){
         std::cout << sdr->test_set.modulated_array[i];
     }
     std::cout << std::endl;
@@ -565,7 +537,7 @@ void calculate_test_set(sdr_global_t *sdr)
 
     // 4. Pulse shaping (формирующий фильтр matched filter)
     sdr->test_set.pulse_shaped = pulse_shaping(sdr->test_set.upsampled_bit_array, 0, sdr->test_set.symb_size);
-    for (int i = 0; i < sdr->test_set.pulse_shaped.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.pulse_shaped.size(); i++){
         std::cout << sdr->test_set.pulse_shaped[i] << " "; 
     }
     std::cout << "" << std::endl;
@@ -576,7 +548,7 @@ void calculate_test_set(sdr_global_t *sdr)
     // 5. Matched filter
     std::cout << "5. Matched filter" << std::endl;
     sdr->test_set.matched_samples = pulse_shaping(sdr->test_set.pulse_shaped, 0, sdr->test_set.symb_size);
-    for (int i = 0; i < sdr->test_set.matched_samples.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.matched_samples.size(); i++){
         std::cout << sdr->test_set.matched_samples[i] << " "; 
     }
     std::cout << "" << std::endl;
@@ -585,19 +557,19 @@ void calculate_test_set(sdr_global_t *sdr)
     // sdr->test_set.ted_err_idx = ted(sdr->test_set.matched_samples, sdr->test_set.symb_size);
     sdr->test_set.ted_samples = symbol_sync(sdr->test_set.matched_samples, sdr->test_set.symb_size);
     sdr->test_set.ted_indexes.resize(sdr->test_set.N * sdr->test_set.symb_size);
-    for (int i = 0; i < sdr->test_set.ted_err_idx.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.ted_err_idx.size(); i++){
         sdr->test_set.ted_indexes[sdr->test_set.ted_err_idx[i]] = 10;
         std::cout << sdr->test_set.ted_err_idx[i] << " ";
     }
     std::cout << "" << std::endl;
-    for (int i = 0; i < sdr->test_set.ted_samples.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.ted_samples.size(); i++){
         std::cout << sdr->test_set.ted_samples[i] << " ";
     }
     std::cout << "" << std::endl;
 
     std::cout << "6. Costas Loop" << std::endl;
     sdr->test_set.costas_samples = costas_loop(sdr->test_set.ted_samples);
-    for (int i = 0; i < sdr->test_set.costas_samples.size(); i++){
+    for (int i = 0; i < (int)sdr->test_set.costas_samples.size(); i++){
         std::cout << sdr->test_set.costas_samples[i] << " ";
     }
     std::cout << "" << std::endl;

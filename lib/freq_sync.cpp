@@ -2,13 +2,63 @@
 #include <vector>
 #include <complex.h>
 #include <numbers> 
+#include <numeric>
+#include <algorithm>
+
+#include <fftw3.h>
 
 #include "math_operations.h"
 
 
-std::vector<std::complex<double>> coarse_freq_sync(std::vector<std::complex<double>> &in)
+std::vector<std::complex<double>> coarse_freq_sync(std::vector<std::complex<double>> &samples, double coarse_freq, int buffer_size, int sample_rate)
 {
+    std::vector<std::complex<double>> out;
+    out.resize(buffer_size);
+    double Ts = 1.0f / sample_rate;
+    std::vector<double> times = arange(0.0f, (double)(Ts * buffer_size), Ts);
+    for (int i = 0; i < buffer_size; i++)
+    {
+        std::complex<double> val = std::complex<double>(0.0, -1.0f * 2.0 * M_PI * (coarse_freq) * times[i]);
+        out[i] = samples[i] * std::exp(val);
+    }
+    return out;
+}
+
+double coarse_max_freq_calculation(std::vector<std::complex<double>> &samples, int buffer_size, int sample_rate)
+{
+    std::vector<std::complex<double>> fft_out_samples;
+    std::vector<std::complex<double>> fft_in_samples;
+    std::vector<double> fft_out_abs;
+    std::vector<std::complex<double>> matched_squared_samples;
+    fft_out_samples.resize(buffer_size);
+    fft_in_samples.resize(buffer_size);
+    fft_out_abs.resize(buffer_size);
+    matched_squared_samples.resize(buffer_size);
+
+    double Ts = 1.0f / sample_rate;
+    std::transform(samples.begin(),
+                   samples.end(),
+                   matched_squared_samples.begin(),
+                   [](const std::complex<double>& z){ return std::pow(z, 2); });
+
+    fftw_plan p = fftw_plan_dft_1d(buffer_size, 
+                                   reinterpret_cast<fftw_complex*>(matched_squared_samples.data()), 
+                                   reinterpret_cast<fftw_complex*>(fft_out_samples.data()), 
+                                   FFTW_FORWARD, 
+                                   FFTW_ESTIMATE);
+    fftw_execute(p);
+    std::transform(fft_out_samples.begin(),
+                   fft_out_samples.end(),
+                   fft_out_abs.begin(),
+                   [](const std::complex<double>& z){ return std::abs(z); });
+
+    fftshift_1d(fft_out_abs, buffer_size);
+    std::vector<double> freqs = arange( (-1) * sample_rate/2.0f, (1) * sample_rate/2.0f, (double)(sample_rate / buffer_size));
     
+    std::vector<double>::iterator max_freq_ind = std::max_element(fft_out_abs.begin(), fft_out_abs.end());
+    int index = std::distance(fft_out_abs.begin(), max_freq_ind);
+
+    return freqs[index] / 2.0;
 }
 
 std::vector<std::complex<double>> costas_loop_bpsk(const std::vector<std::complex<double>>& samples) {

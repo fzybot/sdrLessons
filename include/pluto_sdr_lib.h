@@ -1,5 +1,3 @@
-#pragma ones
-
 #include <SoapySDR/Device.h>
 #include <SoapySDR/Formats.h>
 #include <stdio.h> //printf
