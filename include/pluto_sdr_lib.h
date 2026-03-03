@@ -63,7 +63,7 @@ typedef struct test_set_s{
     std::vector<int> demod_bit_array;
     std::vector<double> barker_corr_real;
     std::vector<double> barker_corr_imag;
-    std::vector<int> barker_correlation;
+    std::vector<std::complex<double>> barker_correlation;
     std::vector<double> fft_out_abs;
     std::vector<int> ted_err_idx;
     std::vector<int> ted_indexes; 

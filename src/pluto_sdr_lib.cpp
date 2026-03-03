@@ -486,12 +486,6 @@ void test_rx_bpsk_barker13(sdr_global_t *sdr)
     int buffer_size = sdr->sdr_config.buffer_size;
     int sample_rate = sdr->sdr_config.rx_sample_rate;
     int nsps = sdr->phy.Nsps;
-
-    // sdr->test_bpsk_barker13.fft_out_samples.resize(buffer_size);
-    // sdr->test_bpsk_barker13.fft_in_samples.resize(buffer_size);
-    // sdr->test_bpsk_barker13.fft_out_abs.resize(buffer_size);
-    // sdr->test_bpsk_barker13.matched_squared_samples.resize(buffer_size);
-    // sdr->test_bpsk_barker13.coarsed_samples.resize(buffer_size);
     
     // 1. Кладем сэмплы в буффер (по размеру буфера)
     int target_idx = 0;
@@ -515,6 +509,18 @@ void test_rx_bpsk_barker13(sdr_global_t *sdr)
     // 5. Частотная синхронизация (Costas Loop)
     sdr->test_bpsk_barker13.costas_samples = costas_loop_bpsk(sdr->test_bpsk_barker13.ted_samples);
 
+    // 6.
+    std::vector<int> barker_real = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
+    std::vector<int> barker_imag = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
+    std::vector<std::complex<double>> barker_complex;
+    for(int i = 0; i < (int)barker_real.size(); i++){
+        barker_complex.push_back(std::complex(barker_real[i] * 1.1f, barker_imag[i] * 1.1f));
+    }
+    sdr->test_bpsk_barker13.barker_correlation = correlate(sdr->test_bpsk_barker13.costas_samples, barker_complex);
+    for(int i = 0; i < (int)sdr->test_bpsk_barker13.barker_correlation.size(); i++){
+        std::cout << sdr->test_bpsk_barker13.barker_correlation[i] << " ";
+    }
+    std::cout << std::endl;
 }
 
 void calculate_test_set(sdr_global_t *sdr)

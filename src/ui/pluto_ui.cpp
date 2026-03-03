@@ -222,7 +222,7 @@ void show_main_window(sdr_global_t *sdr)
             test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr, sdr->test_bpsk_barker13);
             // test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
             // test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
-            // test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr);
+            test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr, sdr->test_bpsk_barker13);
             
             ImGui::EndTabItem();
         }
@@ -656,12 +656,12 @@ void test_pulse_shaping(sdr_global_t *sdr)
     test_sinc(sdr);
 }
 
-void test_rx_from_sdr_barker_corr(sdr_global_t *sdr)
+void test_rx_from_sdr_barker_corr(sdr_global_t *sdr,  test_set_t &test_set)
 {
-    static int rows = 3;
+    static int rows = 1;
     static int cols = 1;
-    static float rratios[] = {5, 5, 5};
-    static float cratios[] = {5, 5, 5};
+    static float rratios[] = {5};
+    static float cratios[] = {5};
 
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
@@ -673,11 +673,24 @@ void test_rx_from_sdr_barker_corr(sdr_global_t *sdr)
         ImPlot::BeginPlot("Barker Correlation", ImVec2());
         ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
-        ImPlot::PlotLine("Sinc", sdr->test_rx_sdr.barker_corr_real.data(), sdr->test_rx_sdr.barker_corr_real.size());
+        ImPlot::PlotLineG(
+                    "I",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &test_set.barker_correlation,
+                    test_set.barker_correlation.size());
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
-        ImPlot::PlotLine("Sinc", sdr->test_rx_sdr.barker_corr_imag.data(), sdr->test_rx_sdr.barker_corr_imag.size());
+        ImPlot::PlotLineG(
+                    "Q",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].imag());
+                    },
+                    &test_set.barker_correlation,
+                    test_set.barker_correlation.size());
         ImPlot::EndPlot();
-        
 
         ImPlot::EndSubplots();
     }

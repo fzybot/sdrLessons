@@ -148,6 +148,21 @@ void fftshift_1d(std::vector<double> &data, int N) {
     }
 }
 
+std::vector<std::complex<double>> correlate(const std::vector<std::complex<double>>& a, const std::vector<std::complex<double>>& v) {
+    int n = a.size();
+    int m = v.size();
+    std::vector<std::complex<double>> result;
+    result.reserve(n - m + 1);
+    for (int i = 0; i <= n - m; ++i) {
+        std::complex<double> s = 0;
+        for (int j = 0; j < m; ++j) {
+            s += a[i + j] * std::conj(v[j]);
+        }
+        result.push_back(s);
+    }
+    return result;
+}
+
 // Function to perform a 1D fftshift in-place on a complex array
 // void fftshift_1d(fftw_complex* data, int N) {
 //     // Calculate the midpoint for the shift
