@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from numpy import arange, sqrt, cos, sin, pi, zeros
 from scipy import signal
 # Открываем файл для чтения
-name = "/home/nsk/dev/test/sdrLessons/build/txdata.pcm"
+name = "/home/nsk/dev/test/sdrLessons/build/txdata_bpsk_barker13.pcm"
 def srrc(syms, beta, P, t_off=0):
 
     # s = (4*beta/np.sqrt(P)) scales SRRC
@@ -171,7 +171,6 @@ rx = rx / 2**11
 #SRRC Generation
 P = 16
 sps = 16
-num_symbols = 100
 nOfSL = 5
 fs = 4e6
 beta = 0.75
@@ -180,7 +179,7 @@ num_taps = nOfSL * P * 2
 h = srrc(nOfSL, P, beta)
 
 # Filter our signal, in order to apply the pulse shaping
-samples = np.convolve(rx, h) #* np.max(h)
+samples = np.convolve(rx, h)
 
 plt.figure(2)
 plt.plot(np.real(samples), '.-')
@@ -202,8 +201,6 @@ Ts = 1/fs # calc sample period
 t = np.arange(0, Ts*len(samples), Ts) # create time vector
 print(len(samples))
 samples = samples * np.exp(-1j*2*np.pi*max_freq*t/2.0)
-fc = int(1000e3)
-#samples = samples * np.exp(1j * 2 * np.pi * fc * t)
 
 plt.figure(8)
 plt.plot(np.real(samples), '.-')
@@ -212,26 +209,28 @@ plt.grid(True)
 plt.figure()
 plt.plot(np.real(samples), np.imag(samples), '.')
 
-n_poly = 16
+n_poly = 32
 # Symbol sync, using what we did in sync chapter
 samples_interpolated = signal.resample_poly(samples, n_poly, 1) # we'll use 32 as the interpolation factor, arbitrarily chosen, seems to work better than 16
 sps = 16
-mu = 0.01 # initial estimate of phase of sample
+
+mu = 0.01 
 out = np.zeros(len(samples) + 10, dtype=np.complex64)
-out_rail = np.zeros(len(samples) + 10, dtype=np.complex64) # stores values, each iteration we need the previous 2 values plus current value
-i_in = 0 # input samples index
-i_out = 2 # output index (let first two outputs be 0)
-while i_out < len(samples) and i_in+n_poly < len(samples):
-    out[i_out] = samples_interpolated[i_in*n_poly + int(mu*n_poly)] # grab what we think is the "best" sample
+out_rail = np.zeros(len(samples) + 10, dtype=np.complex64)
+i_in = 0 
+i_out = 2 
+while i_out < len(samples) and i_in+16 < len(samples):
+    out[i_out] = samples[i_in]
+ 
     out_rail[i_out] = int(np.real(out[i_out]) > 0) + 1j*int(np.imag(out[i_out]) > 0)
     x = (out_rail[i_out] - out_rail[i_out-2]) * np.conj(out[i_out-1])
     y = (out[i_out] - out[i_out-2]) * np.conj(out_rail[i_out-1])
     mm_val = np.real(y - x)
     mu += sps + 0.01*mm_val
-    i_in += int(np.floor(mu)) # round down to nearest int since we are using it as an index
-    mu = mu - np.floor(mu) # remove the integer part of mu
-    i_out += 1 # increment output index
-samples = out[2:i_out] # remove the first two, and anything after i_out (that was never filled out)
+    i_in += int(np.floor(mu))
+    mu = mu - np.floor(mu) 
+    i_out += 1 
+samples = out[2:i_out] 
 
 
 plt.figure()

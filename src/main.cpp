@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     my_sdr.txStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 0);
 
     // calculate_test_set(&my_sdr);
-    test_rx_sdr(&my_sdr);
+    test_rx_bpsk_barker13(&my_sdr);
     prepare_test_tx_buffer(&my_sdr);
 
     std::thread gui_thread(run_gui, &my_sdr);

@@ -119,6 +119,66 @@ std::vector< std::complex<double> > convolve(std::vector<std::complex<double>> &
     return convolved;
 }
 
+std::vector<double> arange(double start, double stop, double step) {
+    std::vector<double> result;
+    for (double val = start; val < stop; val += step) {
+        result.push_back(val);
+    }
+    return result;
+}
+
+void fftshift_1d(std::vector<double> &data, int N) {
+    // Calculate the midpoint for the shift
+    int shift_len = (N + 1) / 2; // Correctly handles both even and odd N
+
+    // Allocate a temporary array to hold the shifted data
+    std::vector<double> temp;
+    temp.resize(N);
+
+    // Perform the circular shift
+    for (int i = 0; i < N; i++) {
+        // The destination index using modulo arithmetic for circularity
+        int dst = (i + shift_len) % N;
+        temp[dst] = data[i]; // Real part
+    }
+
+    // Copy the shifted data back to the original array
+    for (int i = 0; i < N; i++) {
+        data[i] = temp[i];
+    }
+}
+
+// Function to perform a 1D fftshift in-place on a complex array
+// void fftshift_1d(fftw_complex* data, int N) {
+//     // Calculate the midpoint for the shift
+//     int shift_len = (N + 1) / 2; // Correctly handles both even and odd N
+
+//     // Allocate a temporary array to hold the shifted data
+//     fftw_complex* temp = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * N);
+//     if (temp == NULL) {
+//         fprintf(stderr, "Memory allocation failed for fftshift temp array\n");
+//         exit(EXIT_FAILURE);
+//     }
+
+//     // Perform the circular shift
+//     for (int i = 0; i < N; i++) {
+//         // The destination index using modulo arithmetic for circularity
+//         int dst = (i + shift_len) % N;
+//         temp[dst][0] = data[i][0]; // Real part
+//         temp[dst][1] = data[i][1]; // Imaginary part
+//     }
+
+//     // Copy the shifted data back to the original array
+//     for (int i = 0; i < N; i++) {
+//         data[i][0] = temp[i][0];
+//         data[i][1] = temp[i][1];
+//     }
+
+//     // Free the temporary array
+//     fftw_free(temp);
+// }
+
+
 // std::vector<std::complex<double>> convolve(std::vector<std::complex<double>> &a, std::vector<double> &b)
 // {
 //     std::vector<std::complex<double>> result;

@@ -16,12 +16,13 @@
 #include "math_operations.h"
 #include "pluto_sdr_lib.h"
 #include "pluto_ui.h"
-#include "test_samples.h"
+#include "test_rx_samples_pam_qam4_2_barker13.h"
+#include "test_rx_samples_bpsk_barker13.h"
 
 
-void test_header(const char* label, void(*demo)(sdr_global_t *),sdr_global_t *sdr) {
+void test_header(const char* label, void(*demo)(sdr_global_t *, test_set_t &),sdr_global_t *sdr, test_set_t &test_set) {
     if (ImGui::TreeNodeEx(label)) {
-        demo(sdr);
+        demo(sdr, test_set);
         ImGui::TreePop();
     }
 }
@@ -198,16 +199,30 @@ void show_main_window(sdr_global_t *sdr)
 
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Tests")) {
+        if (ImGui::BeginTabItem("Test: PAM, QAM 4_2, Barker13")) {
             // test_header("End2End test", show_test_sdr_set, sdr);
-            test_header("TX side", show_tx_data, sdr);
-            test_header("Pulse Shaping", test_pulse_shaping, sdr);
-            test_header("RX from SDR", test_rx_from_sdr, sdr);
-            test_header("Matched Filter", test_rx_from_sdr_matched_filter, sdr);
-            test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
-            test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
-            test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr);
-            test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr);
+            // test_header("TX side", show_tx_data, sdr);
+            // test_header("Pulse Shaping", test_pulse_shaping, sdr);
+            // test_header("RX from SDR", test_rx_from_sdr, sdr);
+            // test_header("Matched Filter", test_rx_from_sdr_matched_filter, sdr);
+            // test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
+            // test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
+            // test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr);
+            // test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr);
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Test: BPSK, Barker13")) {
+            test_header("RX from SDR", test_rx_from_sdr, sdr, sdr->test_bpsk_barker13);
+            // test_header("TX side", show_tx_data, sdr);
+            // test_header("Pulse Shaping", test_pulse_shaping, sdr);
+            test_header("Matched Filter", test_rx_from_sdr_matched_filter, sdr, sdr->test_bpsk_barker13);
+            test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr, sdr->test_bpsk_barker13);
+            test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr, sdr->test_bpsk_barker13);
+            // test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
+            // test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
+            // test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr);
             
             ImGui::EndTabItem();
         }
@@ -222,8 +237,6 @@ void show_tx_data(sdr_global_t *sdr)
     static int cols = 1;
     static float rratios[] = {5, 5};
     static float cratios[] = {5, 5};
-    bool hovered = false;
-    bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -280,14 +293,12 @@ void show_tx_data(sdr_global_t *sdr)
     }
 }
 
-void test_rx_from_sdr(sdr_global_t *sdr)
+void test_rx_from_sdr(sdr_global_t *sdr, test_set_t &test_set)
 {
     static int rows = 3;
     static int cols = 1;
     static float rratios[] = {5, 5, 5,};
     static float cratios[] = {5, 5, 5};
-    bool hovered = false;
-    bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -296,9 +307,6 @@ void test_rx_from_sdr(sdr_global_t *sdr)
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
         ImPlot::BeginPlot("Several Buffers from RX SDR", ImVec2());
-        // ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0);
-        // ImPlot::SetupAxisLimits(ImAxis_X1, 30.0, 70.0);
-        // ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
                     "I",
@@ -306,8 +314,8 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].real());
                     },
-                    &test_rx_samples,
-                    test_rx_samples.size());
+                    &test_rx_samples_bpsk_barker13,
+                    test_rx_samples_bpsk_barker13.size());
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
                     "Q",
@@ -315,8 +323,8 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].imag());
                     },
-                    &test_rx_samples,
-                    test_rx_samples.size());
+                    &test_rx_samples_bpsk_barker13,
+                    test_rx_samples_bpsk_barker13.size());
         ImPlot::EndPlot();
 
 
@@ -329,8 +337,8 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].real());
                     },
-                    &sdr->test_rx_sdr.channel_samples,
-                    sdr->test_rx_sdr.channel_samples.size());
+                    &test_set.channel_samples,
+                    test_set.channel_samples.size());
         //ImPlot::SetNextLineStyle(ImVec4(0.0f, 10.0f, 0.0f, 1.0f), 2.0f);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
@@ -339,14 +347,12 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].imag());
                     },
-                    &sdr->test_rx_sdr.channel_samples,
-                    sdr->test_rx_sdr.channel_samples.size());
+                    &test_set.channel_samples,
+                    test_set.channel_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("1 Buffer size = 1920 [samples] Constellation", ImVec2());
         ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
-        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
         ImPlot::PlotScatterG(
                 "I/Q",
@@ -354,8 +360,8 @@ void test_rx_from_sdr(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(vec[idx].real(), vec[idx].imag());
                 },
-                &sdr->test_rx_sdr.channel_samples,
-                sdr->test_rx_sdr.channel_samples.size());
+                &test_set.channel_samples,
+                test_set.channel_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
@@ -363,15 +369,13 @@ void test_rx_from_sdr(sdr_global_t *sdr)
     
 }
 
-void test_rx_from_sdr_matched_filter(sdr_global_t *sdr)
+void test_rx_from_sdr_matched_filter(sdr_global_t *sdr, test_set_t &test_set)
 {
 
     static int rows = 2;
     static int cols = 1;
     static float rratios[] = {5, 5};
     static float cratios[] = {5, 5};
-    bool hovered = false;
-    bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -388,8 +392,8 @@ void test_rx_from_sdr_matched_filter(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].real());
                     },
-                    &sdr->test_rx_sdr.matched_samples,
-                    sdr->test_rx_sdr.matched_samples.size());
+                    &test_set.matched_samples,
+                    test_set.matched_samples.size());
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
                     "Q",
@@ -397,13 +401,11 @@ void test_rx_from_sdr_matched_filter(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].imag());
                     },
-                    &sdr->test_rx_sdr.matched_samples,
-                    sdr->test_rx_sdr.matched_samples.size());
+                    &test_set.matched_samples,
+                    test_set.matched_samples.size());
         ImPlot::EndPlot();
         ImPlot::BeginPlot("Matched filter Constellation", ImVec2());
         ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
-        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
         ImPlot::PlotScatterG(
                 "I/Q",
@@ -411,8 +413,8 @@ void test_rx_from_sdr_matched_filter(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(vec[idx].real(), vec[idx].imag());
                 },
-                &sdr->test_rx_sdr.matched_samples,
-                sdr->test_rx_sdr.matched_samples.size());
+                &test_set.matched_samples,
+                test_set.matched_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
@@ -426,8 +428,6 @@ void test_rx_from_sdr_coarse_freq_sync(sdr_global_t *sdr)
     static int cols = 1;
     static float rratios[] = {5, 5, 5, 5, 5};
     static float cratios[] = {5, 5, 5, 5, 5};
-    bool hovered = false;
-    bool held = false;
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -538,15 +538,14 @@ void test_rx_from_sdr_coarse_freq_sync(sdr_global_t *sdr)
     }
 }
 
-void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
+void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr, test_set_t &test_set)
 {
 
-    static int rows = 3;
+    static int rows = 2;
     static int cols = 1;
-    static float rratios[] = {5, 5, 5};
-    static float cratios[] = {5, 5, 5};
-    bool hovered = false;
-    bool held = false;
+    static float rratios[] = {5, 5};
+    static float cratios[] = {5, 5};
+
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -563,8 +562,8 @@ void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].real());
                     },
-                    &sdr->test_rx_sdr.ted_samples,
-                    sdr->test_rx_sdr.ted_samples.size());
+                    &test_set.ted_samples,
+                    test_set.ted_samples.size());
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1], ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
                     "Q",
@@ -572,14 +571,12 @@ void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].imag());
                     },
-                    &sdr->test_rx_sdr.ted_samples,
-                    sdr->test_rx_sdr.ted_samples.size());
+                    &test_set.ted_samples,
+                    test_set.ted_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("TED samples Constellation", ImVec2());
         ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
-        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
         ImPlot::PlotScatterG(
                 "I/Q",
@@ -587,25 +584,9 @@ void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(vec[idx].real(), vec[idx].imag());
                 },
-                &sdr->test_rx_sdr.ted_samples,
-                sdr->test_rx_sdr.ted_samples.size());
+                &test_set.ted_samples,
+                test_set.ted_samples.size());
         ImPlot::EndPlot();
-
-        ImPlot::BeginPlot("sdr->test_rx_sdr.quantalph", ImVec2());
-        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
-        // ImPlot::SetupAxisLimits(ImAxis_Y1, -2.0, 2.0);
-        // ImPlot::SetupAxisLimits(ImAxis_X1, -2.0, 2.0);
-        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0], ImPlotColormap_Plasma));
-        ImPlot::PlotScatterG(
-                "I/Q",
-                [](int idx, void* data) {
-                    auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
-                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-                },
-                &sdr->test_rx_sdr.quantalph,
-                sdr->test_rx_sdr.quantalph.size());
-        ImPlot::EndPlot();
-
 
         ImPlot::EndSubplots();
         
@@ -613,15 +594,14 @@ void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr)
 
 }
 
-void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
+void test_rx_from_sdr_freq_sync(sdr_global_t *sdr,  test_set_t &test_set)
 {
 
-    static int rows = 3;
+    static int rows = 2;
     static int cols = 1;
-    static float rratios[] = {5, 5, 5};
-    static float cratios[] = {5, 5, 5};
-    bool hovered = false;
-    bool held = false;
+    static float rratios[] = {5, 5};
+    static float cratios[] = {5, 5};
+
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;
@@ -637,8 +617,8 @@ void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
                     auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                     return ImPlotPoint(vec[idx].real(), vec[idx].imag());
                 },
-                &sdr->test_rx_sdr.costas_samples,
-                sdr->test_rx_sdr.costas_samples.size());
+                &test_set.costas_samples,
+                test_set.costas_samples.size());
         ImPlot::EndPlot();
 
         ImPlot::BeginPlot("Costas Loop Time", ImVec2());
@@ -650,8 +630,8 @@ void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].real());
                     },
-                    &sdr->test_rx_sdr.costas_samples,
-                    sdr->test_rx_sdr.costas_samples.size());
+                    &test_set.costas_samples,
+                    test_set.costas_samples.size());
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(
                     "Q",
@@ -659,8 +639,8 @@ void test_rx_from_sdr_freq_sync(sdr_global_t *sdr)
                         auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
                         return ImPlotPoint(idx, vec[idx].imag());
                     },
-                    &sdr->test_rx_sdr.costas_samples,
-                    sdr->test_rx_sdr.costas_samples.size());
+                    &test_set.costas_samples,
+                    test_set.costas_samples.size());
         ImPlot::EndPlot();
         
 
@@ -682,8 +662,7 @@ void test_rx_from_sdr_barker_corr(sdr_global_t *sdr)
     static int cols = 1;
     static float rratios[] = {5, 5, 5};
     static float cratios[] = {5, 5, 5};
-    bool hovered = false;
-    bool held = false;
+
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
     win_size.x -= 50;

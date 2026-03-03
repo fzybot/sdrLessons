@@ -76,6 +76,7 @@ typedef struct sdr_global_s{
     bool running;
     test_set_t test_set;
     test_set_t test_rx_sdr;
+    test_set_t test_bpsk_barker13;
     sdr_config_t sdr_config;
     sdr_phy_t phy;
     SoapySDRDevice *sdr;
@@ -96,9 +97,11 @@ void fill_test_tx_buffer(int16_t *buffer, int size);
 // Преобразование сэмплов из двух массивов (I[N], Q[N]) в вид Pluto (buff[N*2] = {I, Q, I, Q, ..., I, Q})
 void transform_to_pluto_type_smples(std::vector<double> &I_part, std::vector<double> &Q_part, int16_t *buffer);
 void transform_from_pluto_type_samples(std::vector<double> &I_part, std::vector<double> &Q_part, int16_t *buffer);
+
 void prepare_test_tx_buffer(sdr_global_t *sdr);
 void calculate_test_set(sdr_global_t *sdr);
 void test_rx_sdr(sdr_global_t *sdr);
+void test_rx_bpsk_barker13(sdr_global_t *sdr);
 
 void run_sdr(sdr_global_t *sdr);
 

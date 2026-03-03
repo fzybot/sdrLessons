@@ -20,3 +20,6 @@ std::vector<double> correlate_manual(const std::vector<double> &a, const std::ve
 std::vector<double> convolve(std::vector<double> &a, std::vector<double> &b);
 std::vector<double> sinc(const std::vector<double> &x);
 std::vector<double> linspace(double start, double end, int num);
+std::vector<double> arange(double start, double stop, double step);
+
+void fftshift_1d(std::vector<double> &data, int N);

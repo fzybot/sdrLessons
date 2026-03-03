@@ -6,11 +6,11 @@ void test_pulse_shaping(sdr_global_t *sdr);
 void test_srrc(sdr_global_t *sdr);
 void test_hamming(sdr_global_t *sdr);
 void test_sinc(sdr_global_t *sdr);
-void test_rx_from_sdr(sdr_global_t *sdr);
-void test_rx_from_sdr_matched_filter(sdr_global_t *sdr);
+void test_rx_from_sdr(sdr_global_t *sdr, test_set_t &test_set);
+void test_rx_from_sdr_matched_filter(sdr_global_t *sdr, test_set_t &test_set);
 void test_rx_from_sdr_coarse_freq_sync(sdr_global_t *sdr);
-void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr);
-void test_rx_from_sdr_freq_sync(sdr_global_t *sdr);
+void test_rx_from_sdr_symbol_sync(sdr_global_t *sdr, test_set_t &test_set);
+void test_rx_from_sdr_freq_sync(sdr_global_t *sdr, test_set_t &test_set);
 void test_rx_from_sdr_barker_corr(sdr_global_t *sdr);
 void show_tx_data(sdr_global_t *sdr);
 

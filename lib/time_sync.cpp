@@ -54,3 +54,30 @@ std::vector<std::complex<double>> symbol_sync(std::vector<std::complex<double>> 
     }
     return symb_samples;
 }
+
+// Mueller and Muller clock recovery technique
+std::vector<std::complex<double>> clock_recovery_mueller_muller(const std::vector<std::complex<double>>& samples, double sps) {
+    double mu = 0.01f;
+    std::vector<std::complex<double>> out(samples.size() + 10);
+    std::vector<std::complex<double>> out_rail(samples.size() + 10);
+    size_t i_in = 0;
+    size_t i_out = 2;
+    while (i_out < samples.size() && i_in + 16 < samples.size()) {
+        out[i_out] = samples[i_in];
+
+        out_rail[i_out] = std::complex<double>(
+            std::real(out[i_out]) > 0 ? 1.0f : 0.0f,
+            std::imag(out[i_out]) > 0 ? 1.0f : 0.0f
+        );
+
+        std::complex<double> x = (out_rail[i_out] - out_rail[i_out - 2]) * std::conj(out[i_out - 1]);
+        std::complex<double> y = (out[i_out] - out[i_out - 2]) * std::conj(out_rail[i_out - 1]);
+        double mm_val = std::real(y - x);
+
+        mu += sps + 0.01f * mm_val;
+        i_in += static_cast<size_t>(std::floor(mu));
+        mu = mu - std::floor(mu);
+        i_out += 1;
+    }
+    return std::vector<std::complex<double>>(out.begin() + 2, out.begin() + i_out);
+}
