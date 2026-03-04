@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <linux/netlink.h>
 
+int sock_fd;
+
 void setBaseNetAddress(char net_prefix[16], char *baseAddr)
 {
     strncpy(net_prefix, baseAddr, 16);
@@ -275,7 +277,7 @@ static int tun_alloc_stress(char *dev)
 int netlink_init_tun_stress(char ifname[64])
 {
     int ret;
-    int sock_fd;
+    
     sock_fd = tun_alloc_stress(ifname);
 
     if (sock_fd == -1) {
@@ -303,6 +305,7 @@ int netlink_init_tun_stress(char ifname[64])
 int main(int argc, char **argv)
 //---------------------------------------------------------------------------
 {
+    int BUFFER_SIZE = 1024;
     int c;
     char interfaceName[100];
     char ipAddress[100];
@@ -325,9 +328,14 @@ int main(int argc, char **argv)
            broadcastAddress);
     netlink_init_tun_stress(interfaceName);
     config_tun_test(interfaceName, ipAddress, networkMask, broadcastAddress);
-    while(1){
-        printf("Here we should write\read bytes into\from 'sdr_tun' interface\n");
-        sleep(5);
+    int nread;
+    char buffer[BUFFER_SIZE];
+    while (1)
+    {
+        nread = read(sock_fd, buffer, sizeof(buffer));
+        if(nread > 0){
+            printf("Received bytes = %d\n", nread);
+        }
     }
 
     return 0;
