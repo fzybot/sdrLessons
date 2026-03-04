@@ -28,7 +28,32 @@
 ├── .gitmodules
 └── и пр.
 ```
+Архитектурно main.cpp выглядит след. образом:
 
+```cpp
+int main(int argc, char* argv[])
+{
+    // Наши параметры SDR находятся в одной структуре.
+    sdr_global_t my_sdr;
+    // ...
+    // Конфигурация стркутуры sdr_global_t для работы SDR (размер буфера, sample rate, tx_lo, и т.д.)
+    //...
+    // Инициализируем Adalm Pluto SDR + RX и TX стримы (для получения и отправки сэмплов)
+    my_sdr.sdr = setup_pluto_sdr(&my_sdr.sdr_config);
+    my_sdr.rxStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 1);
+    my_sdr.txStream = setup_stream(my_sdr.sdr, &my_sdr.sdr_config, 0);
+
+    // Запускаем в одном потоке GUI, во втором работу с SDR
+    // оба потока обращаются к одной области памяти (к стркутуре) sdr_global_t
+    std::thread gui_thread(run_gui, &my_sdr);
+    std::thread sdr_thread(run_sdr, &my_sdr);
+
+    gui_thread.join();
+    sdr_thread.join();
+
+    return EXIT_SUCCESS;
+}
+```
 ## Установка и запуск
 ### Сторонние зависимости
 Установка зависимостей для `Dear ImGUI` (визуального интерфейса):
