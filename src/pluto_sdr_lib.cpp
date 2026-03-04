@@ -254,13 +254,13 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     // std::cout << std::endl;
 
     // 2. "0X00Hello from user10X00" в ASCII\UTF-8 - 104 бита
-    std::vector<uint8_t> hello_sibguti = {0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 
+    std::vector<int> hello_sibguti = {0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 
         1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 
         0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 
         1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 
         1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 
         0, 0, 0, 1, 1, 0, 0, 0, 0};
-        
+
     std::cout << "text len = " << hello_sibguti.size() << std::endl;
 
     // 3. Модуляция 4_2_QAM
@@ -367,10 +367,6 @@ void test_rx_bpsk_barker13(sdr_global_t *sdr)
         barker_complex.push_back(std::complex(barker_real[i] * 1.1f, barker_imag[i] * 1.1f));
     }
     sdr->test_bpsk_barker13.barker_correlation = correlate(sdr->test_bpsk_barker13.costas_samples, barker_complex);
-    for(int i = 0; i < (int)sdr->test_bpsk_barker13.barker_correlation.size(); i++){
-        std::cout << sdr->test_bpsk_barker13.barker_correlation[i] << " ";
-    }
-    std::cout << std::endl;
 }
 
 void calculate_test_set(sdr_global_t *sdr)
