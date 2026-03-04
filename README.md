@@ -28,7 +28,7 @@
 ├── .gitmodules
 └── и пр.
 ```
-Архитектурно main.cpp выглядит след. образом:
+Архитектурно `main.cpp` выглядит след. образом:
 
 ```cpp
 int main(int argc, char* argv[])
