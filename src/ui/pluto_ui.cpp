@@ -220,10 +220,8 @@ void show_main_window(sdr_global_t *sdr)
             test_header("Matched Filter", test_rx_from_sdr_matched_filter, sdr, sdr->test_bpsk_barker13);
             test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr, sdr->test_bpsk_barker13);
             test_header("Frequency Sync", test_rx_from_sdr_freq_sync, sdr, sdr->test_bpsk_barker13);
-            // test_header("Coarse Freq Sync", test_rx_from_sdr_coarse_freq_sync, sdr);
-            // test_header("Symbol Sync", test_rx_from_sdr_symbol_sync, sdr);
             test_header("Barker Code Correlation", test_rx_from_sdr_barker_corr, sdr, sdr->test_bpsk_barker13);
-            
+            test_header("Demodulation", test_rx_from_sdr_barker_demodulation, sdr, sdr->test_bpsk_barker13);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -290,6 +288,21 @@ void show_tx_data(sdr_global_t *sdr)
         ImPlot::EndPlot();
 
         ImPlot::EndSubplots();
+    }
+}
+
+void test_rx_from_sdr_barker_demodulation(sdr_global_t *sdr,  test_set_t &test_set)
+{
+    ImGui::Text("TX bits: ");
+    for (int i = 0; i < test_set.bit_array.size(); i++){
+        ImGui::Text("%d", test_set.bit_array[i]);
+        ImGui::SameLine();
+    }
+
+    ImGui::Text("RX (demodulated) bits: ");
+    for (int i = 0; i < test_set.demod_bit_array.size(); i++){
+        ImGui::Text("%d", test_set.demod_bit_array[i]);
+        ImGui::SameLine();
     }
 }
 
