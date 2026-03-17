@@ -52,17 +52,19 @@ typedef struct test_set_s{
 
     std::vector<std::complex<double>> channel_samples;
     std::vector<std::complex<double>> matched_samples;
+    std::vector<std::complex<double>> coarsed_samples;
+    std::vector<std::complex<double>> shifted_before_cl;
     std::vector<std::complex<double>> matched_squared_samples;
     std::vector<std::complex<double>> ted_samples;
     std::vector<std::complex<double>> quantalph;
     std::vector<std::complex<double>> costas_samples;
     std::vector<std::complex<double>> fft_in_samples;
     std::vector<std::complex<double>> fft_out_samples;
-    std::vector<double> fft_out_abs;
     std::vector<int> demod_bit_array;
     std::vector<double> barker_corr_real;
     std::vector<double> barker_corr_imag;
     std::vector<std::complex<double>> barker_correlation;
+    std::vector<double> fft_out_abs;
     std::vector<int> ted_err_idx;
     std::vector<int> ted_indexes; 
 } test_set_t;

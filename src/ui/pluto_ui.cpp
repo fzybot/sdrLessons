@@ -298,6 +298,8 @@ void test_rx_from_sdr_barker_demodulation(sdr_global_t *sdr,  test_set_t &test_s
         ImGui::Text("%d", test_set.bit_array[i]);
         ImGui::SameLine();
     }
+    
+    ImGui::Text(" ");
 
     ImGui::Text("RX (demodulated) bits: ");
     for (int i = 0; i < test_set.demod_bit_array.size(); i++){
