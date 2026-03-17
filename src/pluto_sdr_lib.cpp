@@ -253,7 +253,7 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
     }
     // std::cout << std::endl;
 
-    // 2. "0X00Hello from user10X00" в ASCII\UTF-8 - 104 бита
+    // 2. "0X00Hello from user10" в ASCII\UTF-8 - 104 бита
     std::vector<int> hello_sibguti = {0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 
         1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 
         0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 
@@ -333,12 +333,19 @@ void prepare_test_tx_buffer(sdr_global_t *sdr)
 
 void test_rx_bpsk_barker13(sdr_global_t *sdr)
 {
+    std::vector<int> hello_sibguti = {0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 
+        1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 
+        0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 
+        1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 
+        1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 
+        0};
+    sdr->test_bpsk_barker13.bit_array = hello_sibguti;
     int buffer_size = sdr->sdr_config.buffer_size;
     int sample_rate = sdr->sdr_config.rx_sample_rate;
     int nsps = sdr->phy.Nsps;
     
     // 1. Кладем сэмплы в буффер (по размеру буфера)
-    int target_idx = 0;
+    int target_idx = 8200;
     for (int i = target_idx; i < target_idx + buffer_size; i++){
         sdr->test_bpsk_barker13.channel_samples.push_back(test_rx_samples_bpsk_barker13[i] / std::pow(2, 11));
     }
@@ -349,24 +356,76 @@ void test_rx_bpsk_barker13(sdr_global_t *sdr)
     std::vector<double> filter = srrc(syms, beta, nsps, 0.0f);
     sdr->test_bpsk_barker13.matched_samples = convolve(sdr->test_bpsk_barker13.channel_samples, filter);
 
-    // 3. Грубая частотная синхронизация (Coarse Freq Correction (Blind Correction))
-    double coarse_freq = coarse_max_freq_calculation(sdr->test_bpsk_barker13.matched_samples, buffer_size, sample_rate);
-    sdr->test_bpsk_barker13.coarsed_samples = coarse_freq_sync(sdr->test_bpsk_barker13.matched_samples, coarse_freq, buffer_size, sample_rate);
+    // 3. Символьная синхронизация \ downsampling
+    sdr->test_bpsk_barker13.ted_samples = clock_recovery_mueller_muller(sdr->test_bpsk_barker13.matched_samples, nsps);
 
-    // 4. Символьная синхронизация
-    sdr->test_bpsk_barker13.ted_samples = clock_recovery_mueller_muller(sdr->test_bpsk_barker13.coarsed_samples, nsps);
-
-    // 5. Частотная синхронизация (Costas Loop)
+    // 4. Частотная синхронизация (Costas Loop)
     sdr->test_bpsk_barker13.costas_samples = costas_loop_bpsk(sdr->test_bpsk_barker13.ted_samples);
-
-    // 6.
+    
+    // 4.5 Нормируем к единице
+    double max = 0.0f;
+    sdr->test_bpsk_barker13.quantalph.resize(sdr->test_bpsk_barker13.costas_samples.size());
+    for (int i = 0; i < sdr->test_bpsk_barker13.costas_samples.size(); i++) {
+        if(sdr->test_bpsk_barker13.costas_samples[i].real() > max){
+            max = sdr->test_bpsk_barker13.costas_samples[i].real();
+        }
+    }
+    for (int i = 0; i < sdr->test_bpsk_barker13.costas_samples.size(); i++) {
+        sdr->test_bpsk_barker13.quantalph[i] = sdr->test_bpsk_barker13.costas_samples[i] / max;
+    }
+    // 5. Корреляция по Баркеру
     std::vector<int> barker_real = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
     std::vector<int> barker_imag = {1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
     std::vector<std::complex<double>> barker_complex;
     for(int i = 0; i < (int)barker_real.size(); i++){
         barker_complex.push_back(std::complex(barker_real[i] * 1.1f, barker_imag[i] * 1.1f));
     }
-    sdr->test_bpsk_barker13.barker_correlation = correlate(sdr->test_bpsk_barker13.costas_samples, barker_complex);
+    sdr->test_bpsk_barker13.barker_correlation = correlate(sdr->test_bpsk_barker13.quantalph, barker_complex);
+    int barker_index = 0;
+    double max_threashold = 8;
+    for (int i = 0; i < sdr->test_bpsk_barker13.barker_correlation.size(); i++)
+    {
+        if( sdr->test_bpsk_barker13.barker_correlation[i].real() >= max_threashold || 
+            sdr->test_bpsk_barker13.barker_correlation[i].imag() >= max_threashold)
+        {
+            barker_index = i;
+            std::cout << "Barker found in " << barker_index << std::endl;
+        }
+    }
+    
+    int val = 0;
+    int compare = 0;
+
+    for (int i = barker_index + 13; i < barker_index + 13 + 176; i++)
+    {
+        compare = i - (barker_index + 13);
+        if (sdr->test_bpsk_barker13.quantalph[i].real() > 0)
+        {
+            val = 1;
+        }
+        else {
+            val = 0;
+        }
+        sdr->test_bpsk_barker13.demod_bit_array.push_back(val);
+        
+        if(compare % 8 == 0){
+            std::cout << " ";
+        }
+        std::cout << val;
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "Transmitted Bit array size = " << sdr->test_bpsk_barker13.bit_array.size() << std::endl;
+    std::cout << "Received Bit array size = " << sdr->test_bpsk_barker13.demod_bit_array.size() << std::endl;
+    int success_counter = 0;
+    for (int i = 0; i < sdr->test_bpsk_barker13.bit_array.size(); i++)
+    {
+        if(sdr->test_bpsk_barker13.bit_array[i] == sdr->test_bpsk_barker13.demod_bit_array[i]){
+            success_counter++;
+        }
+    }
+    std::cout << "Success rate = " << (success_counter / sdr->test_bpsk_barker13.demod_bit_array.size()) * 100 << "%" <<std::endl;
 }
 
 void calculate_test_set(sdr_global_t *sdr)

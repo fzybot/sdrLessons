@@ -658,10 +658,10 @@ void test_pulse_shaping(sdr_global_t *sdr)
 
 void test_rx_from_sdr_barker_corr(sdr_global_t *sdr,  test_set_t &test_set)
 {
-    static int rows = 1;
+    static int rows = 2;
     static int cols = 1;
-    static float rratios[] = {5};
-    static float cratios[] = {5};
+    static float rratios[] = {5, 5};
+    static float cratios[] = {5, 5};
 
     ImVec2 win_size = ImGui::GetWindowSize();
     win_size.y -= 50;
@@ -670,7 +670,29 @@ void test_rx_from_sdr_barker_corr(sdr_global_t *sdr,  test_set_t &test_set)
     static ImPlotSubplotFlags flags = ImPlotSubplotFlags_None;
     if (ImPlot::BeginSubplots("My Subplots", rows, cols, win_size, flags, rratios, cratios)) {
 
-        ImPlot::BeginPlot("Barker Correlation", ImVec2());
+        ImPlot::BeginPlot("Нормировка по единице", ImVec2());
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "I",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].real());
+                    },
+                    &test_set.quantalph,
+                    test_set.quantalph.size());
+        ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[1],ImPlotColormap_Plasma));
+        ImPlot::PlotLineG(
+                    "Q",
+                    [](int idx, void* data) {
+                        auto& vec = *static_cast<std::vector<std::complex<double>>*>(data);
+                        return ImPlotPoint(idx, vec[idx].imag());
+                    },
+                    &test_set.quantalph,
+                    test_set.quantalph.size());
+        ImPlot::EndPlot();
+
+        ImPlot::BeginPlot("Корреляция по Баркеру (13 бит)", ImVec2());
         ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Reverse);
         ImPlot::SetNextLineStyle(ImPlot::SampleColormap(color[0],ImPlotColormap_Plasma));
         ImPlot::PlotLineG(

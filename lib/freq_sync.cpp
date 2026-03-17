@@ -69,8 +69,6 @@ std::vector<std::complex<double>> costas_loop_bpsk(const std::vector<std::comple
     double beta = 0.02f;
     std::vector<std::complex<double>> out;
     out.resize(N);
-    std::cout << "N = " << N << std::endl;
-    // std::vector<double> freq_log; // Uncomment if you want to log frequency
 
     for (int i = 0; i < N; ++i) {
         std::complex<double> exp_term = std::complex<double>(0.0, -1.0f * phase);
