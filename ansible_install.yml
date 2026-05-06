@@ -10,9 +10,9 @@
     - name: Update and upgrade apt packages
       apt:
         update_cache: yes
-        upgrade: yes
+      become: yes
 
-    - name: Install required packages
+    - name: Install required packages (Basic)
       apt:
         name: 
           - build-essential 
@@ -24,14 +24,10 @@
           - python3-numpy
           - swig
           - python3-matplotlib
-          - libfftw3-dev 
           - libmbedtls-dev 
           - libboost-program-options-dev 
           - libconfig++-dev 
           - libsctp-dev
-          - libsdl2-dev
-          - libgl1-mesa-dev
-          - libglew-dev
           - libxml2
           - libxml2-dev
           - bison
@@ -42,14 +38,23 @@
           - pkg-config
           - libavahi-common-dev
           - libavahi-client-dev
+          - libsdl2-dev
           # - nlohmann-json3-dev
         state: present
 
-    # - name: Update submodules
-    #   shell: |
-    #     git submodule update --init --recursive
-    #     git submodule update --remote --recursive
-        
+    - name: Install required packages (Dear ImGUI)
+      apt:
+        name: 
+          - libsdl2-dev
+          - libgl1-mesa-dev
+          - libglew-dev
+
+    - name: Install required packages (PlutoSDR)
+      apt:
+        name: 
+          - libfftw3-single3 
+          - libfftw3-dev
+
     - name: Compile, and install SoapySDR
       shell: |
         cd {{ install_path }}/thirdparty/SoapySDR

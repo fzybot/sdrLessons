@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
 }
 ```
 ## Установка и запуск
-### Сторонние зависимости
-Установка зависимостей для `Dear ImGUI` (визуального интерфейса):
+
+<!-- Установка зависимостей для `Dear ImGUI` (визуального интерфейса):
 ```bash
 # OpenGL, SDL2, Glew
 sudo apt install libsdl2-dev libgl1-mesa-dev libglew-dev
@@ -66,16 +66,27 @@ sudo apt install libsdl2-dev libgl1-mesa-dev libglew-dev
 ```bash
 # Установка библиотеки для вычисления FFT
 sudo apt-get install libfftw3-single3 libfftw3-dev
-```
+``` -->
 
 
-### Клонирование
+### Клонируем
 ```bash
 git clone https://github.com/fzybot/sdrLessons.git
 git submodule update --init --recursive # загружаем сабмодули
 ```
 
+### Установка посредством Ansible
+Для автоматической установки всех необходимых зависимостей и сборки доп. библиотек для работы проекта запускаем скрипт:
+```bash
+./install.sh
+```
+Проблем возникнуть не должно. 
+
+### Установка доп. библиотек вручную
+Если есть желание установить зависимости вручную, устанавливаем сначала через `apt`: список можно найти в файле `<корень проекта>/ansible_install.yml` ([здесь](https://github.com/fzybot/sdrLessons/blob/master/ansible_install.yml)), смотрим на `tasks` -> `apt`.
+
 Компиляция и установка библиотек, необходимых для работы с **Adalm Pluto SDR** описана [здесь](https://github.com/fzybot/sdrLessons/blob/master/thirdparty/README.md) или в `/third_party/README.md`.
+
 
 
 ### Компиляция
