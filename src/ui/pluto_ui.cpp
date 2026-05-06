@@ -145,56 +145,56 @@ void show_main_window(sdr_global_t *sdr)
             show_iq_scatter_plot(sdr, sdr->phy.raw_samples);
             //show_iq_scatter_plot(sdr, sdr->phy.matched_samples);
 
-            ImPlot::BeginPlot("Pulse Shaping ConstellationPlot");
-            ImPlot::SetupAxes("I","Q");
-            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
-            ImPlot::PlotScatterG(
-                "Signal",
-                [](int idx, void* data) {
-                    auto& vec =
-                        *static_cast<std::vector<std::complex<double>>*>(
-                            data);
-                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-                },
-                &sdr->phy.matched_samples,
-                sdr->phy.matched_samples.size());
-            ImPlot::EndPlot();
+            // ImPlot::BeginPlot("Pulse Shaping ConstellationPlot");
+            // ImPlot::SetupAxes("I","Q");
+            // ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            // ImPlot::PlotScatterG(
+            //     "Signal",
+            //     [](int idx, void* data) {
+            //         auto& vec =
+            //             *static_cast<std::vector<std::complex<double>>*>(
+            //                 data);
+            //         return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+            //     },
+            //     &sdr->phy.matched_samples,
+            //     sdr->phy.matched_samples.size());
+            // ImPlot::EndPlot();
 
-            ImPlot::BeginPlot("Symb sync ConstellationPlot");
-            ImPlot::SetupAxes("I","Q");
-            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
-            ImPlot::PlotScatterG(
-                "Signal",
-                [](int idx, void* data) {
-                    auto& vec =
-                        *static_cast<std::vector<std::complex<double>>*>(
-                            data);
-                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-                },
-                &sdr->phy.symb_sync_samples,
-                sdr->phy.symb_sync_samples.size());
-            ImPlot::EndPlot();
+            // ImPlot::BeginPlot("Symb sync ConstellationPlot");
+            // ImPlot::SetupAxes("I","Q");
+            // ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            // ImPlot::PlotScatterG(
+            //     "Signal",
+            //     [](int idx, void* data) {
+            //         auto& vec =
+            //             *static_cast<std::vector<std::complex<double>>*>(
+            //                 data);
+            //         return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+            //     },
+            //     &sdr->phy.symb_sync_samples,
+            //     sdr->phy.symb_sync_samples.size());
+            // ImPlot::EndPlot();
 
-            ImPlot::BeginPlot("Costas Loop ConstellationPlot");
-            ImPlot::SetupAxes("I","Q");
-            ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
-            ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
-            ImPlot::PlotScatterG(
-                "Signal",
-                [](int idx, void* data) {
-                    auto& vec =
-                        *static_cast<std::vector<std::complex<double>>*>(
-                            data);
-                    return ImPlotPoint(vec[idx].real(), vec[idx].imag());
-                },
-                &sdr->phy.costas_sync_samples,
-                sdr->phy.costas_sync_samples.size());
-            ImPlot::EndPlot();
+            // ImPlot::BeginPlot("Costas Loop ConstellationPlot");
+            // ImPlot::SetupAxes("I","Q");
+            // ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
+            // ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.8); // Тип и размер точек
+            // ImPlot::PlotScatterG(
+            //     "Signal",
+            //     [](int idx, void* data) {
+            //         auto& vec =
+            //             *static_cast<std::vector<std::complex<double>>*>(
+            //                 data);
+            //         return ImPlotPoint(vec[idx].real(), vec[idx].imag());
+            //     },
+            //     &sdr->phy.costas_sync_samples,
+            //     sdr->phy.costas_sync_samples.size());
+            // ImPlot::EndPlot();
 
 
             ImGui::EndTabItem();
@@ -784,11 +784,8 @@ void show_iq_scatter_plot(sdr_global_t *sdr, std::vector< std::complex<double> >
     {
         //ImVec2 plotSize(500, 600);
         //ImGui::Begin("Test for I/Q samples update in Scatter plot");
-        ImVec2 win_size = ImGui::GetWindowSize();
-        win_size.y -= 50;
-        win_size.x -= 50;
         if (!samples.empty()) {
-            ImPlot::BeginPlot("ConstellationPlot");
+            ImPlot::BeginPlot("ConstellationPlot", ImVec2(-1, -1));
             ImPlot::SetupAxes("I","Q");
             ImPlot::SetupAxisLimits(ImAxis_X1, -2500.0, 2500.0); // 12-bit АЦП
             ImPlot::SetupAxisLimits(ImAxis_Y1, -2500.0, 2500.0); // 12-bit АЦП
